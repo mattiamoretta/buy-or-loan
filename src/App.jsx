@@ -86,7 +86,7 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix }){
       <label className="text-sm text-slate-600">{label}</label>
       <div className="flex items-center gap-2">
         {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
-        <input type="number" className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300" value={value} onChange={(e)=>onChange(parseFloat(e.target.value||"0"))} min={min} max={max} step={step} />
+        <input type="number" className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300" value={value} onChange={(e)=>onChange(parseFloat(e.target.value||"0"))} min={min} max={max} step={step} />
         {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
       </div>
     </div>
@@ -104,7 +104,7 @@ function KPICard({ title, value, subtitle }){
   return (
     <div className="rounded-xl border border-slate-200 p-3 bg-slate-50">
       <div className="text-xs text-slate-500 mb-1">{title}</div>
-      <div className="text-lg font-semibold text-indigo-600">{value}</div>
+      <div className="text-lg font-semibold text-orange-600">{value}</div>
       {subtitle && <div className="text-xs text-slate-400">{subtitle}</div>}
     </div>
   );
@@ -137,12 +137,12 @@ export default function App(){
   const [loading, setLoading] = useState(false);
 
   const backgrounds = [
-    'from-indigo-50 via-purple-50 to-slate-50',
-    'from-indigo-100 via-purple-100 to-slate-100',
-    'from-indigo-200 via-purple-200 to-slate-200',
-    'from-indigo-300 via-purple-300 to-slate-300',
-    'from-indigo-400 via-purple-400 to-slate-400',
-    'from-indigo-500 via-purple-500 to-slate-500',
+    'from-orange-50 via-amber-50 to-yellow-50',
+    'from-orange-100 via-amber-100 to-yellow-100',
+    'from-orange-200 via-amber-200 to-yellow-200',
+    'from-orange-300 via-amber-300 to-yellow-300',
+    'from-orange-400 via-amber-400 to-yellow-400',
+    'from-orange-500 via-amber-500 to-yellow-500',
   ];
 
   // Base
@@ -207,16 +207,16 @@ export default function App(){
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center gap-3 mb-6">
-          <Calculator className="w-7 h-7 text-indigo-600" />
+          <Calculator className="w-7 h-7 text-orange-600" />
           <h1 className="text-2xl md:text-3xl font-semibold">Simulatore Mutuo vs Cash – Wizard</h1>
         </header>
 
         <AnimatePresence mode="wait">
           {loading && (
             <motion.div key="loading" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="bg-white p-6 rounded-2xl shadow flex flex-col items-center gap-4">
-              <p className="text-lg font-medium">Elaborazione complessa in corso...</p>
-              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <motion.div className="h-full bg-indigo-600" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:2}} />
+              <div className="h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-full h-2 bg-orange-200 rounded-full overflow-hidden">
+                <motion.div className="h-full bg-orange-600" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:2}} />
               </div>
             </motion.div>
           )}
@@ -225,7 +225,7 @@ export default function App(){
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
               <h2 className="text-2xl font-bold">Scopri se conviene mutuo o cash</h2>
               <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore.</p>
-              <button onClick={()=>setStep(1)} className="px-6 py-3 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
+              <button onClick={()=>setStep(1)} className="px-6 py-3 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
             </motion.div>
           )}
 
@@ -239,7 +239,7 @@ export default function App(){
                 <Field label="Durata scenario B (anni)" value={yearsB} onChange={setYearsB} min={1} max={40} step={1} />
               </Grid>
               <div className="flex justify-end">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
@@ -254,8 +254,8 @@ export default function App(){
                 <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
               </Grid>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
@@ -268,8 +268,8 @@ export default function App(){
                 <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
@@ -282,8 +282,8 @@ export default function App(){
                 <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(5);},2000);}} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(5);},2000);}} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
