@@ -283,7 +283,7 @@ export default function App(){
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 1 – Cosa vuoi acquistare?</h2>
               <Grid>
-                <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} prefix="€" />
+                <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
                 <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
               </Grid>
               <div className="flex justify-end">
@@ -299,7 +299,6 @@ export default function App(){
                 <Grid>
                   <Field label="TAN mutuo (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                  <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
                 </Grid>
                   <Grid>
                     <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1}/>
@@ -318,7 +317,9 @@ export default function App(){
                 <h2 className="text-lg font-medium">Step 3 – Investimenti</h2>
                 <div className="space-y-3">
                   <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
+                  <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
+                  <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
                   <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
                 </div>
                 <div className="flex justify-between">
@@ -330,10 +331,9 @@ export default function App(){
 
           {!loading && step===4 && (
             <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Capiamo quanto possa incidere il guadagno atteso!</h2>
+              <h2 className="text-lg font-medium">Step 4 – Il tuo stipendio</h2>
               <div className="space-y-3">
-                <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
-                <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
@@ -344,17 +344,16 @@ export default function App(){
 
           {!loading && step===5 && (
             <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+              <h2 className="text-lg font-medium">Here we go!</h2>
               <Card>
-                <h2 className="text-lg font-medium mb-2">Here we go!</h2>
+                <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <KPICard title={`Mutuo ${yearsA} anni – rata`} value={fmt2(sA.payment)} subtitle="€/mese"/>
-                  <KPICard title={`Mutuo ${yearsB} anni – rata`} value={fmt2(sB.payment)} subtitle="€/mese"/>
-                  <KPICard title={`Break-even lordo ${yearsA}y`} value={pct(beA)} subtitle="guadagno reale = 0"/>
-                  <KPICard title={`Break-even lordo ${yearsB}y`} value={pct(beB)} subtitle="guadagno reale = 0"/>
+                  <KPICard title="Rata" value={fmt2(sA.payment)} subtitle="€/mese"/>
+                  <KPICard title="Break-even lordo" value={pct(beA)} subtitle="guadagno reale = 0"/>
                 </div>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="mt-4">
                   <MiniTable
-                    title={`Mutuo ${yearsA} anni`}
+                    title="Dettagli"
                     sections={[
                       { title: "Investimento", rows: [["Invest. finale nominale", fmt(sA.fvNominal)], ["Invest. finale reale", fmt(sA.fvReal)]] },
                       { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
@@ -363,8 +362,18 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                     ]}
                   />
+                </div>
+              </Card>
+
+              <Card>
+                <h3 className="text-md font-medium mb-2">Mutuo {yearsB} anni</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <KPICard title="Rata" value={fmt2(sB.payment)} subtitle="€/mese"/>
+                  <KPICard title="Break-even lordo" value={pct(beB)} subtitle="guadagno reale = 0"/>
+                </div>
+                <div className="mt-4">
                   <MiniTable
-                    title={`Mutuo ${yearsB} anni`}
+                    title="Dettagli"
                     sections={[
                       { title: "Investimento", rows: [["Invest. finale nominale", fmt(sB.fvNominal)], ["Invest. finale reale", fmt(sB.fvReal)]] },
                       { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
@@ -393,9 +402,6 @@ export default function App(){
                       <Line type="monotone" dataKey={labelB} stroke="#f97316" dot={false} strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
                 </div>
               </Card>
 
@@ -463,7 +469,9 @@ export default function App(){
                   </div>
                 </div>
               </Card>
-
+              <div className="flex justify-end">
+                <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
+              </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
