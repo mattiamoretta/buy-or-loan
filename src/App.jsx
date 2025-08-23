@@ -215,11 +215,14 @@ export default function App(){
 
         <AnimatePresence mode="wait">
           {loading && (
-            <motion.div key="loading" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="bg-white p-6 rounded-2xl shadow flex flex-col items-center gap-4">
-              <div className="h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-              <div className="w-full h-2 bg-orange-200 rounded-full overflow-hidden">
-                <motion.div className="h-full bg-orange-600" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:2}} />
-              </div>
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-white flex items-center justify-center"
+            >
+              <div className="h-16 w-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
             </motion.div>
           )}
 
