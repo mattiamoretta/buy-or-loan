@@ -285,8 +285,6 @@ export default function App(){
               <Grid>
                 <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} prefix="€" />
                 <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
-                <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1} />
-                <Field label="Durata scenario B (anni)" value={yearsB} onChange={setYearsB} min={1} max={40} step={1} />
               </Grid>
               <div className="flex justify-end">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
@@ -312,9 +310,13 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – L'immobile ti genera rendita?</h2>
+              <h2 className="text-lg font-medium">Step 3 – Durata scenari e rendita</h2>
               <div className="space-y-3">
-                <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
+                <Grid>
+                  <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1} />
+                  <Field label="Durata scenario B (anni)" value={yearsB} onChange={setYearsB} min={1} max={40} step={1} />
+                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
+                </Grid>
                 <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
               </div>
               <div className="flex justify-between">
