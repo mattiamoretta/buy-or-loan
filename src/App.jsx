@@ -45,14 +45,34 @@ function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, monthl
   return (lo+hi)/2;
 }
 
-function breakEvenTime({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra=0, reinvest=true }){
-  const finalGain = scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
-  if(finalGain < 0) return Infinity;
+
+function mortgageBalance({ principal, annualRate, years, afterYears }){
+  const payment = pmt(principal, annualRate, years);
+  const r = annualRate/12; const t = Math.round(afterYears*12);
+  const bal = principal*Math.pow(1+r, t) - payment*((Math.pow(1+r, t)-1)/r);
+  return Math.max(0, bal);
+}
+
+function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, monthlyExtra=0, reinvest=true }){
+  const principal = price*(1-downPct);
+  const initialInvest = price - price*downPct;
+
+  function profit(y){
+    const fv = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, reinvest });
+    const contrib = initialInvest + monthlyExtra*12*y;
+    return fv - contrib;
+  }
+
+  function balance(y){
+    return mortgageBalance({ principal, annualRate: tan, years, afterYears: y });
+  }
+
+  if(profit(years) < balance(years)) return Infinity;
+
   let lo=0, hi=years;
   for(let i=0;i<60;i++){
     const mid=(lo+hi)/2;
-    const g=scenarioGain({ price, downPct, tan, years: mid, grossReturn, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
-    if(g>=0) hi=mid; else lo=mid;
+    if(profit(mid) >= balance(mid)) hi=mid; else lo=mid;
   }
   return (lo+hi)/2;
 }
@@ -131,8 +151,8 @@ export default function App(){
   const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
   const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, monthlyExtra, reinvest]);
   const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, monthlyExtra, reinvest]);
-  const beTimeA = useMemo(()=>breakEvenTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
-  const beTimeB = useMemo(()=>breakEvenTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
+  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, monthlyExtra, reinvest]);
+  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, monthlyExtra, reinvest]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
   const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
   const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
@@ -218,8 +238,8 @@ export default function App(){
                   <KPICard title={`Break-even lordo ${yearsB}y`} value={pct(beB)} subtitle="guadagno reale = 0"/>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["Anno break-even", isFinite(beTimeA) ? `${beTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
-                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["Anno break-even", isFinite(beTimeB) ? `${beTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
+                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
+                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
                 </div>
               </Card>
 
@@ -255,14 +275,15 @@ export default function App(){
                   <ResponsiveContainer>
                     <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                       <XAxis dataKey="year" />
-                      <YAxis tickFormatter={(v)=>v.toLocaleString("it-IT")} />
+                      <YAxis yAxisId="A" tickFormatter={(v)=>v.toLocaleString("it-IT")} />
+                      <YAxis yAxisId="B" orientation="right" tickFormatter={(v)=>v.toLocaleString("it-IT")} />
                       <Tooltip formatter={(v)=>fmt(v)} labelFormatter={(l)=>`Anno ${l}`} />
                       <Legend />
                       <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                      <Line type="monotone" dataKey={labelAN} stroke="#2563eb" strokeDasharray="5 5" dot={false} />
-                      <Line type="monotone" dataKey={labelAR} stroke="#2563eb" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey={labelBN} stroke="#f97316" strokeDasharray="5 5" dot={false} />
-                      <Line type="monotone" dataKey={labelBR} stroke="#f97316" strokeWidth={2} dot={false} />
+                      <Line yAxisId="A" type="monotone" dataKey={labelAN} stroke="#2563eb" strokeDasharray="5 5" dot={false} />
+                      <Line yAxisId="A" type="monotone" dataKey={labelAR} stroke="#2563eb" strokeWidth={2} dot={false} />
+                      <Line yAxisId="B" type="monotone" dataKey={labelBN} stroke="#f97316" strokeDasharray="5 5" dot={false} />
+                      <Line yAxisId="B" type="monotone" dataKey={labelBR} stroke="#f97316" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
