@@ -109,15 +109,20 @@ function KPICard({ title, value, subtitle }){
     </div>
   );
 }
-function MiniTable({ title, rows }){
+function MiniTable({ title, sections }){
   return (
     <div className="rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-4 py-2 bg-slate-50 text-sm font-semibold text-slate-700">{title}</div>
       <div className="divide-y">
-        {rows.map(([k,v], i)=> (
-          <div key={i} className="flex items-center justify-between px-4 py-2 text-sm">
-            <span className="text-slate-600">{k}</span>
-            <span className="font-medium">{v}</span>
+        {sections.map((s, i) => (
+          <div key={i}>
+            <div className="px-4 py-1 bg-slate-100 text-xs font-semibold text-slate-600">{s.title}</div>
+            {s.rows.map(([k, v], j) => (
+              <div key={j} className="flex items-center justify-between px-4 py-2 text-sm">
+                <span className="text-slate-600">{k}</span>
+                <span className="font-medium">{v}</span>
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -254,8 +259,26 @@ export default function App(){
                   <KPICard title={`Break-even lordo ${yearsB}y`} value={pct(beB)} subtitle="guadagno reale = 0"/>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"],["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"],["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
-                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"],["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"],["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
+                  <MiniTable
+                    title={`Mutuo ${yearsA} anni`}
+                    sections={[
+                      { title: "Investimento", rows: [["Invest. finale nominale", fmt(sA.fvNominal)], ["Invest. finale reale", fmt(sA.fvReal)]] },
+                      { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
+                      { title: "Guadagno", rows: [["Guadagno nominale", fmt(sA.gainNominal)], ["Guadagno reale", fmt(sA.gainReal)]] },
+                      { title: "Comparazione stipendio", rows: [["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                      { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
+                    ]}
+                  />
+                  <MiniTable
+                    title={`Mutuo ${yearsB} anni`}
+                    sections={[
+                      { title: "Investimento", rows: [["Invest. finale nominale", fmt(sB.fvNominal)], ["Invest. finale reale", fmt(sB.fvReal)]] },
+                      { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
+                      { title: "Guadagno", rows: [["Guadagno nominale", fmt(sB.gainNominal)], ["Guadagno reale", fmt(sB.gainReal)]] },
+                      { title: "Comparazione stipendio", rows: [["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                      { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
+                    ]}
+                  />
                 </div>
               </Card>
 
