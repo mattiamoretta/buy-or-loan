@@ -253,7 +253,7 @@ export default function App(){
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
-          <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard 🚀</h1>
+          <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard - Cash oppure mutuo? 🚀</h1>
         </header>
 
         {step > 0 && <Stepper step={step} />}
@@ -273,15 +273,15 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
-              <h2 className="text-2xl font-bold">Scopri se conviene mutuo o cash</h2>
-              <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore.</p>
+              <h2 className="text-2xl font-bold">Scopri se conviene andare di cash oppure affidarsi ad un mutuo.</h2>
+              <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore!</p>
               <button onClick={()=>setStep(1)} className="px-6 py-3 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
             </motion.div>
           )}
 
           {!loading && step===1 && (
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 1 – Parametri base</h2>
+              <h2 className="text-lg font-medium">Step 1 – Cosa vuoi acquistare?</h2>
               <Grid>
                 <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} prefix="€" />
                 <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
@@ -296,7 +296,7 @@ export default function App(){
 
           {!loading && step===2 && (
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Tassi & inflazione</h2>
+              <h2 className="text-lg font-medium">Step 2 – Che mutuo stai considerando?</h2>
               <Grid>
                 <Field label="TAN mutuo (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                 <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
@@ -312,7 +312,7 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Contributi extra</h2>
+              <h2 className="text-lg font-medium">Step 3 – L'immobile ti genera rendita?</h2>
               <div className="space-y-3">
                 <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
                 <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
@@ -326,7 +326,7 @@ export default function App(){
 
           {!loading && step===4 && (
             <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Stipendio & soglia guadagno</h2>
+              <h2 className="text-lg font-medium">Step 4 – Capiamo quanto possa incidere il guadagno atteso!</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
                 <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
@@ -341,7 +341,7 @@ export default function App(){
           {!loading && step===5 && (
             <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
               <Card>
-                <h2 className="text-lg font-medium mb-2">Risultati</h2>
+                <h2 className="text-lg font-medium mb-2">Here we go!</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <KPICard title={`Mutuo ${yearsA} anni – rata`} value={fmt2(sA.payment)} subtitle="€/mese"/>
                   <KPICard title={`Mutuo ${yearsB} anni – rata`} value={fmt2(sB.payment)} subtitle="€/mese"/>
@@ -419,7 +419,7 @@ export default function App(){
               </Card>
 
               <Card>
-                <h2 className="text-lg font-medium mb-2">Conclusione guidata</h2>
+                <h2 className="text-lg font-medium mb-2">Conclusione</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="rounded-xl border border-slate-200 p-4 bg-white">
                     <div className="flex items-center justify-between mb-2">
