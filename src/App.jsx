@@ -11,30 +11,35 @@ const pct = (n) => `${(n * 100).toFixed(2)}%`;
 function pmt(principal, annualRate, years){
   const r = annualRate/12; const n = years*12; return (principal*r)/(1-Math.pow(1+r,-n));
 }
-function investFV({ initial, monthly, grossReturn, taxRate, years }){
+function investFV({ initial, monthly, grossReturn, taxRate, years, reinvest=true }){
   const rNet = (grossReturn||0)*(1-taxRate); const rm = rNet/12; let v = initial; const months = Math.round(years*12);
-  for(let m=1;m<=months;m++) v = v*(1+rm) + (monthly||0);
-  return v;
+  if(reinvest){
+    for(let m=1;m<=months;m++) v = v*(1+rm) + (monthly||0);
+    return v;
+  } else {
+    for(let m=1;m<=months;m++) v = v*(1+rm);
+    return v + (monthly||0)*months;
+  }
 }
 function mortgageCosts({ principal, annualRate, years, inflation }){
   const n = years*12; const im = inflation/12; const payment = pmt(principal, annualRate, years); const totalPaid = payment*n; const interestNominal = totalPaid - principal;
   let pvPayments = 0; for(let m=1;m<=n;m++) pvPayments += payment/Math.pow(1+im,m);
   const interestReal = pvPayments - principal; return { payment, totalPaid, interestNominal, interestReal };
 }
-function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra=0 }){
+function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra=0, reinvest=true }){
   const principal = price*(1-downPct);
   const initialInvest = price - price*downPct; // capitale non usato sulla casa
-  const fvNominal = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years });
+  const fvNominal = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years, reinvest });
   const { interestNominal, interestReal, payment } = mortgageCosts({ principal, annualRate: tan, years, inflation });
   const fvReal = fvNominal/Math.pow(1+inflation, years);
   const gainNominal = fvNominal - (principal + interestNominal);
   const gainReal = fvReal - (principal + interestReal);
   return { principal, initialInvest, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
 }
-function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, monthlyExtra=0 }){
+function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, monthlyExtra=0, reinvest=true }){
   let lo=0, hi=0.2; // 0..20% lordo
   for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, monthlyExtra }).gainReal;
+    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
     if(g>=0) hi=mid; else lo=mid;
   }
   return (lo+hi)/2;
@@ -53,6 +58,14 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix }){
         {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
       </div>
     </div>
+  );
+}
+function Checkbox({ label, checked, onChange }){
+  return (
+    <label className="flex items-center gap-2 text-sm text-slate-600">
+      <input type="checkbox" className="rounded" checked={checked} onChange={(e)=>onChange(e.target.checked)} />
+      {label}
+    </label>
   );
 }
 function KPICard({ title, value, subtitle }){
@@ -99,21 +112,22 @@ export default function App(){
 
   // Contributi
   const [monthlyExtra, setMonthlyExtra] = useState(0);
+  const [reinvest, setReinvest] = useState(true);
 
   // Calcoli
-  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra]);
-  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra]);
-  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, monthlyExtra }), [price, downPct, tan, yearsA, tax, infl, monthlyExtra]);
-  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, monthlyExtra }), [price, downPct, tan, yearsB, tax, infl, monthlyExtra]);
+  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
+  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
+  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, monthlyExtra, reinvest]);
+  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, monthlyExtra, reinvest]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
   const chartData = useMemo(()=>{
     const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
-      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra }).gainReal;
-      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra }).gainReal;
+      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra, reinvest }).gainReal;
+      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra, reinvest }).gainReal;
       rows.push({ r:+(r*100).toFixed(2), [labelA]: gA, [labelB]: gB });
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, tax, infl, monthlyExtra, labelA, labelB]);
+  }, [price, downPct, tan, yearsA, yearsB, tax, infl, monthlyExtra, reinvest, labelA, labelB]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-slate-100 text-slate-800">
@@ -156,9 +170,10 @@ export default function App(){
           {step===2 && (
             <motion.div key="s2" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 3 – Contributi extra</h2>
-              <Grid>
+              <div className="space-y-3">
                 <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
-              </Grid>
+                <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
+              </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border">Indietro</button>
                 <button onClick={()=>setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
