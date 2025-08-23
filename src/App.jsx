@@ -205,7 +205,7 @@ export default function App(){
         <AnimatePresence mode="wait">
           {loading && (
             <motion.div key="loading" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="bg-white p-6 rounded-2xl shadow flex flex-col items-center gap-4">
-              <img src="https://source.unsplash.com/featured/400x200?computer" alt="Loading" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/computer.jpg" alt="Loading" className="w-full h-40 object-cover rounded-xl" />
               <p className="text-lg font-medium">Elaborazione complessa in corso...</p>
               <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <motion.div className="h-full bg-indigo-600" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:2}} />
@@ -215,7 +215,7 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
-              <img src="https://source.unsplash.com/featured/800x400?modern-house" alt="Casa moderna" className="w-full h-48 object-cover rounded-xl" />
+              <img src="/images/modern-house.jpg" alt="Casa moderna" className="w-full h-48 object-cover rounded-xl" />
               <h2 className="text-2xl font-bold">Scopri se conviene mutuo o cash</h2>
               <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore.</p>
               <button onClick={()=>setStep(1)} className="px-6 py-3 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
@@ -224,7 +224,7 @@ export default function App(){
 
           {!loading && step===1 && (
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <img src="https://source.unsplash.com/featured/400x200?house" alt="Casa" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/house.jpg" alt="Casa" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 1 – Parametri base</h2>
               <Grid>
                 <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} prefix="€" />
@@ -240,7 +240,7 @@ export default function App(){
 
           {!loading && step===2 && (
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <img src="https://source.unsplash.com/featured/400x200?finance" alt="Finanza" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/finance.jpg" alt="Finanza" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 2 – Tassi & inflazione</h2>
               <Grid>
                 <Field label="TAN mutuo (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
@@ -257,7 +257,7 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <img src="https://source.unsplash.com/featured/400x200?savings" alt="Risparmio" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/savings.jpg" alt="Risparmio" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 3 – Contributi extra</h2>
               <div className="space-y-3">
                 <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
@@ -272,7 +272,7 @@ export default function App(){
 
           {!loading && step===4 && (
             <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <img src="https://source.unsplash.com/featured/400x200?salary" alt="Stipendio" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/salary.jpg" alt="Stipendio" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 4 – Stipendio & soglia guadagno</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
@@ -287,7 +287,7 @@ export default function App(){
 
           {!loading && step===5 && (
             <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-              <img src="https://source.unsplash.com/featured/400x200?chart" alt="Risultati" className="w-full h-40 object-cover rounded-xl" />
+              <img src="/images/chart.jpg" alt="Risultati" className="w-full h-40 object-cover rounded-xl" />
               <Card>
                 <h2 className="text-lg font-medium mb-2">Risultati</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
