@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 body {
+  @apply font-sans;
   margin: 0;
 }
 
