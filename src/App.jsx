@@ -127,7 +127,7 @@ function MiniTable({ title, rows }){
 
 // -------------------- App --------------------
 export default function App(){
-  // Wizard: 0..3
+  // Wizard: 0..4
   const [step, setStep] = useState(0);
 
   // Base
@@ -145,6 +145,9 @@ export default function App(){
   // Contributi
   const [monthlyExtra, setMonthlyExtra] = useState(0);
   const [reinvest, setReinvest] = useState(true);
+
+  // Stipendio
+  const [salary, setSalary] = useState(30000);
 
   // Calcoli
   const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
@@ -222,13 +225,26 @@ export default function App(){
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
           {step===3 && (
-            <motion.div key="s3" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="space-y-6">
+            <motion.div key="s3" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 4 – Stipendio netto</h2>
+              <div className="space-y-3">
+                <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
+              </div>
+              <div className="flex justify-between">
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+              </div>
+            </motion.div>
+          )}
+
+          {step===4 && (
+            <motion.div key="s4" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="space-y-6">
               <Card>
                 <h2 className="text-lg font-medium mb-2">Risultati</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -238,8 +254,8 @@ export default function App(){
                   <KPICard title={`Break-even lordo ${yearsB}y`} value={pct(beB)} subtitle="guadagno reale = 0"/>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
-                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
+                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"],["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"],["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
+                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"],["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"],["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
                 </div>
               </Card>
 
@@ -324,7 +340,7 @@ export default function App(){
               </Card>
 
               <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border">Indietro</button>
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border">Ricomincia</button>
               </div>
             </motion.div>
