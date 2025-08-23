@@ -283,7 +283,7 @@ export default function App(){
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 1 – Cosa vuoi acquistare?</h2>
               <Grid>
-                <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
+                <Field label="Prezzo casa (€)" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
                 <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
               </Grid>
               <div className="flex justify-end">
@@ -318,7 +318,7 @@ export default function App(){
                 <div className="space-y-3">
                   <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
                   <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
-                  <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
                   <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
                   <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
                   
