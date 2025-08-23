@@ -132,9 +132,9 @@ function MiniTable({ title, sections }){
 
 function Stepper({ step }) {
   const labels = [
-    "Parametri",
-    "Tassi",
-    "Contributi",
+    "Acquisto",
+    "Mutuo",
+    "Scenari",
     "Stipendio",
     "Risultati",
   ];
