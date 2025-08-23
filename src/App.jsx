@@ -187,6 +187,12 @@ export default function App(){
   const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
   const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
 
+  const targetPct = minGainPct>0 ? minGainPct : 0;
+  const diffPctA = sA.gainReal / sA.principal - targetPct;
+  const diffAmtA = sA.gainReal - sA.principal * targetPct;
+  const diffPctB = sB.gainReal / sB.principal - targetPct;
+  const diffAmtB = sB.gainReal - sB.principal * targetPct;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-slate-100 text-slate-800">
       <div className="max-w-5xl mx-auto p-6">
@@ -270,7 +276,7 @@ export default function App(){
                       { title: "Investimento", rows: [["Invest. finale nominale", fmt(sA.fvNominal)], ["Invest. finale reale", fmt(sA.fvReal)]] },
                       { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
                       { title: "Guadagno", rows: [["Guadagno nominale", fmt(sA.gainNominal)], ["Guadagno reale", fmt(sA.gainReal)]] },
-                      { title: "Comparazione stipendio", rows: [["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                      { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"], ["% prezzo casa", pct(sA.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"]] },
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                     ]}
                   />
@@ -280,7 +286,7 @@ export default function App(){
                       { title: "Investimento", rows: [["Invest. finale nominale", fmt(sB.fvNominal)], ["Invest. finale reale", fmt(sB.fvReal)]] },
                       { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
                       { title: "Guadagno", rows: [["Guadagno nominale", fmt(sB.gainNominal)], ["Guadagno reale", fmt(sB.gainReal)]] },
-                      { title: "Comparazione stipendio", rows: [["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                      { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"], ["% prezzo casa", pct(sB.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"]] },
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                     ]}
                   />
@@ -344,9 +350,13 @@ export default function App(){
                       </span>
                     </div>
                     <ul className="text-sm text-slate-600 space-y-1">
+                      <li>% stipendio annuo: <b>{salary>0 ? pct(sA.gainReal/salary) : "–"}</b></li>
+                      <li>% prezzo casa: <b>{pct(sA.gainReal/price)}</b></li>
+                      <li>Mesi di lavoro equivalenti: <b>{salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"}</b></li>
                       <li>Break-even lordo: <b>{pct(beA)}</b></li>
                       <li>Guadagno reale stimato: <b>{fmt(sA.gainReal)}</b></li>
                       <li>Interessi reali (PV): <b>{fmt(sA.interestReal)}</b></li>
+                      <li>{minGainPct>0 ? <>Scostamento dalla % attesa: <b>{pct(diffPctA)}</b> ({fmt(diffAmtA)})</> : <>Scostamento dallo smenarci: <b>{pct(diffPctA)}</b> ({fmt(diffAmtA)})</>}</li>
                     </ul>
                     <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minGainPct>0 && ` e il guadagno supera il ${pct(minGainPct)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
                   </div>
@@ -358,9 +368,13 @@ export default function App(){
                       </span>
                     </div>
                     <ul className="text-sm text-slate-600 space-y-1">
+                      <li>% stipendio annuo: <b>{salary>0 ? pct(sB.gainReal/salary) : "–"}</b></li>
+                      <li>% prezzo casa: <b>{pct(sB.gainReal/price)}</b></li>
+                      <li>Mesi di lavoro equivalenti: <b>{salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"}</b></li>
                       <li>Break-even lordo: <b>{pct(beB)}</b></li>
                       <li>Guadagno reale stimato: <b>{fmt(sB.gainReal)}</b></li>
                       <li>Interessi reali (PV): <b>{fmt(sB.interestReal)}</b></li>
+                      <li>{minGainPct>0 ? <>Scostamento dalla % attesa: <b>{pct(diffPctB)}</b> ({fmt(diffAmtB)})</> : <>Scostamento dallo smenarci: <b>{pct(diffPctB)}</b> ({fmt(diffAmtB)})</>}</li>
                     </ul>
                     <p className="text-xs text-slate-500 mt-2">Con durate più lunghe l'interesse composto aiuta: sopra il break-even i vantaggi crescono molto più che nei periodi brevi.</p>
                   </div>
