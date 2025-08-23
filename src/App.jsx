@@ -153,6 +153,7 @@ export default function App(){
 
   // Stipendio
   const [salary, setSalary] = useState(30000);
+  const [minGainPct, setMinGainPct] = useState(0.1);
 
   // Calcoli
   const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
@@ -182,6 +183,9 @@ export default function App(){
     }
     return rows;
   }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, monthlyExtra, reinvest, labelAN, labelAR, labelBN, labelBR]);
+
+  const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
+  const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-slate-100 text-slate-800">
@@ -237,9 +241,10 @@ export default function App(){
 
           {step===3 && (
             <motion.div key="s3" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Stipendio netto</h2>
+              <h2 className="text-lg font-medium">Step 4 – Stipendio & soglia guadagno</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
+                <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
@@ -334,8 +339,8 @@ export default function App(){
                   <div className="rounded-xl border border-slate-200 p-4 bg-white">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-semibold">{labelA}</div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${sA.gainReal>=0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {sA.gainReal>=0 ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
+                      <span className={`px-2 py-1 text-xs rounded-full ${betterA ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {betterA ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
                       </span>
                     </div>
                     <ul className="text-sm text-slate-600 space-y-1">
@@ -343,13 +348,13 @@ export default function App(){
                       <li>Guadagno reale stimato: <b>{fmt(sA.gainReal)}</b></li>
                       <li>Interessi reali (PV): <b>{fmt(sA.interestReal)}</b></li>
                     </ul>
-                    <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
+                    <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minGainPct>0 && ` e il guadagno supera il ${pct(minGainPct)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
                   </div>
                   <div className="rounded-xl border border-slate-200 p-4 bg-white">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-semibold">{labelB}</div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${sB.gainReal>=0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {sB.gainReal>=0 ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
+                      <span className={`px-2 py-1 text-xs rounded-full ${betterB ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {betterB ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
                       </span>
                     </div>
                     <ul className="text-sm text-slate-600 space-y-1">
