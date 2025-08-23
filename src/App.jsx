@@ -134,7 +134,7 @@ function Stepper({ step }) {
   const labels = [
     "Acquisto",
     "Mutuo",
-    "Scenari",
+    "Investimenti",
     "Stipendio",
     "Risultati",
   ];
