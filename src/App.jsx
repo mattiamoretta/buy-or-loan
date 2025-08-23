@@ -138,6 +138,7 @@ function Stepper({ step }) {
     "Stipendio",
     "Risultati",
   ];
+  const isFinal = step === labels.length;
   return (
     <div className="flex items-center mb-8">
       {labels.map((label, idx) => {
@@ -156,7 +157,7 @@ function Stepper({ step }) {
               >
                 {num}
               </div>
-              <span className="mt-2 text-xs text-slate-600">{label}</span>
+              <span className={`mt-2 text-xs ${isFinal ? "text-white" : "text-slate-600"}`}>{label}</span>
             </div>
             {idx < labels.length - 1 && (
               <div
@@ -460,8 +461,8 @@ export default function App(){
               </Card>
 
               <div className="flex justify-between">
-                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border">Ricomincia</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
+                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
               </div>
             </motion.div>
           )}

@@ -14,3 +14,6 @@ npm run dev
 ```bash
 npm run build
 ```
+
+The production site is generated into the `docs/` directory, which can be
+served directly via GitHub Pages.
