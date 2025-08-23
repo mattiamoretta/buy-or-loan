@@ -130,6 +130,48 @@ function MiniTable({ title, sections }){
   );
 }
 
+function Stepper({ step }) {
+  const labels = [
+    "Parametri",
+    "Tassi",
+    "Contributi",
+    "Stipendio",
+    "Risultati",
+  ];
+  return (
+    <div className="flex items-center mb-8">
+      {labels.map((label, idx) => {
+        const num = idx + 1;
+        const active = step === num;
+        const completed = step > num;
+        return (
+          <React.Fragment key={label}>
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium ${
+                  active || completed
+                    ? "bg-orange-600 text-white"
+                    : "bg-slate-200 text-slate-600"
+                }`}
+              >
+                {num}
+              </div>
+              <span className="mt-2 text-xs text-slate-600">{label}</span>
+            </div>
+            {idx < labels.length - 1 && (
+              <div
+                className={`flex-1 h-px mx-2 ${
+                  step > num ? "bg-orange-600" : "bg-slate-300"
+                }`}
+              ></div>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 // -------------------- App --------------------
 export default function App(){
   // Wizard: 0..5 (0 = landing)
@@ -212,6 +254,8 @@ export default function App(){
           <Calculator className="w-7 h-7 text-orange-600" />
           <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard 🚀</h1>
         </header>
+
+        {step > 0 && <Stepper step={step} />}
 
         <AnimatePresence mode="wait">
           {loading && (
