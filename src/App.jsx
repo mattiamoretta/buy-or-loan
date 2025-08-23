@@ -132,8 +132,9 @@ function MiniTable({ title, sections }){
 
 // -------------------- App --------------------
 export default function App(){
-  // Wizard: 0..4
+  // Wizard: 0..5 (0 = landing)
   const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   // Base
   const [price, setPrice] = useState(150000);
@@ -202,8 +203,28 @@ export default function App(){
         </header>
 
         <AnimatePresence mode="wait">
-          {step===0 && (
-            <motion.div key="s0" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+          {loading && (
+            <motion.div key="loading" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="bg-white p-6 rounded-2xl shadow flex flex-col items-center gap-4">
+              <img src="https://source.unsplash.com/featured/400x200?computer" alt="Loading" className="w-full h-40 object-cover rounded-xl" />
+              <p className="text-lg font-medium">Elaborazione complessa in corso...</p>
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <motion.div className="h-full bg-indigo-600" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:2}} />
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && step===0 && (
+            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
+              <img src="https://source.unsplash.com/featured/800x400?modern-house" alt="Casa moderna" className="w-full h-48 object-cover rounded-xl" />
+              <h2 className="text-2xl font-bold">Scopri se conviene mutuo o cash</h2>
+              <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore.</p>
+              <button onClick={()=>setStep(1)} className="px-6 py-3 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
+            </motion.div>
+          )}
+
+          {!loading && step===1 && (
+            <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <img src="https://source.unsplash.com/featured/400x200?house" alt="Casa" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 1 – Parametri base</h2>
               <Grid>
                 <Field label="Prezzo casa" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} prefix="€" />
@@ -211,12 +232,15 @@ export default function App(){
                 <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1} />
                 <Field label="Durata scenario B (anni)" value={yearsB} onChange={setYearsB} min={1} max={40} step={1} />
               </Grid>
-              <button onClick={()=>setStep(1)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+              <div className="flex justify-end">
+                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+              </div>
             </motion.div>
           )}
 
-          {step===1 && (
-            <motion.div key="s1" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+          {!loading && step===2 && (
+            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <img src="https://source.unsplash.com/featured/400x200?finance" alt="Finanza" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 2 – Tassi & inflazione</h2>
               <Grid>
                 <Field label="TAN mutuo (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
@@ -225,42 +249,45 @@ export default function App(){
                 <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
               </Grid>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
-              </div>
-            </motion.div>
-          )}
-
-          {step===2 && (
-            <motion.div key="s2" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Contributi extra</h2>
-              <div className="space-y-3">
-                <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
-                <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
-              </div>
-              <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border">Indietro</button>
                 <button onClick={()=>setStep(3)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
-          {step===3 && (
-            <motion.div key="s3" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+          {!loading && step===3 && (
+            <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <img src="https://source.unsplash.com/featured/400x200?savings" alt="Risparmio" className="w-full h-40 object-cover rounded-xl" />
+              <h2 className="text-lg font-medium">Step 3 – Contributi extra</h2>
+              <div className="space-y-3">
+                <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} prefix="€" />
+                <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
+              </div>
+              <div className="flex justify-between">
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && step===4 && (
+            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <img src="https://source.unsplash.com/featured/400x200?salary" alt="Stipendio" className="w-full h-40 object-cover rounded-xl" />
               <h2 className="text-lg font-medium">Step 4 – Stipendio & soglia guadagno</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} prefix="€" />
                 <Field label="Soglia guadagno minimo (% mutuo, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border">Indietro</button>
-                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border">Indietro</button>
+                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(5);},2000);}} className="px-4 py-2 bg-indigo-600 text-white rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
-          {step===4 && (
-            <motion.div key="s4" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="space-y-6">
+          {!loading && step===5 && (
+            <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+              <img src="https://source.unsplash.com/featured/400x200?chart" alt="Risultati" className="w-full h-40 object-cover rounded-xl" />
               <Card>
                 <h2 className="text-lg font-medium mb-2">Risultati</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -382,7 +409,7 @@ export default function App(){
               </Card>
 
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border">Indietro</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border">Indietro</button>
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border">Ricomincia</button>
               </div>
             </motion.div>
