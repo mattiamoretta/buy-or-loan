@@ -45,6 +45,18 @@ function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, monthl
   return (lo+hi)/2;
 }
 
+function breakEvenTime({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra=0, reinvest=true }){
+  const finalGain = scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
+  if(finalGain < 0) return Infinity;
+  let lo=0, hi=years;
+  for(let i=0;i<60;i++){
+    const mid=(lo+hi)/2;
+    const g=scenarioGain({ price, downPct, tan, years: mid, grossReturn, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
+    if(g>=0) hi=mid; else lo=mid;
+  }
+  return (lo+hi)/2;
+}
+
 // -------------------- UI helpers --------------------
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
@@ -119,7 +131,11 @@ export default function App(){
   const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
   const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, monthlyExtra, reinvest]);
   const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, monthlyExtra, reinvest]);
+  const beTimeA = useMemo(()=>breakEvenTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
+  const beTimeB = useMemo(()=>breakEvenTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
+  const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
+  const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
   const chartData = useMemo(()=>{
     const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
       const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra, reinvest }).gainReal;
@@ -128,6 +144,16 @@ export default function App(){
     }
     return rows;
   }, [price, downPct, tan, yearsA, yearsB, tax, infl, monthlyExtra, reinvest, labelA, labelB]);
+  const yearlyData = useMemo(()=>{
+    const maxY=Math.max(yearsA, yearsB); const rows=[];
+    for(let y=1;y<=maxY;y++){
+      const row={ year:y };
+      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, monthlyExtra, reinvest }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
+      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, monthlyExtra, reinvest }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
+      rows.push(row);
+    }
+    return rows;
+  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, monthlyExtra, reinvest, labelAN, labelAR, labelBN, labelBR]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-slate-100 text-slate-800">
@@ -192,8 +218,8 @@ export default function App(){
                   <KPICard title={`Break-even lordo ${yearsB}y`} value={pct(beB)} subtitle="guadagno reale = 0"/>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)]]} />
-                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)]]} />
+                  <MiniTable title={`Mutuo ${yearsA} anni`} rows={[["Invest. finale nominale", fmt(sA.fvNominal)],["Invest. finale reale", fmt(sA.fvReal)],["Interessi nominali", fmt(sA.interestNominal)],["Interessi reali (PV)", fmt(sA.interestReal)],["Guadagno nominale", fmt(sA.gainNominal)],["Guadagno reale", fmt(sA.gainReal)],["Anno break-even", isFinite(beTimeA) ? `${beTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]]} />
+                  <MiniTable title={`Mutuo ${yearsB} anni`} rows={[["Invest. finale nominale", fmt(sB.fvNominal)],["Invest. finale reale", fmt(sB.fvReal)],["Interessi nominali", fmt(sB.interestNominal)],["Interessi reali (PV)", fmt(sB.interestReal)],["Guadagno nominale", fmt(sB.gainNominal)],["Guadagno reale", fmt(sB.gainReal)],["Anno break-even", isFinite(beTimeB) ? `${beTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]]} />
                 </div>
               </Card>
 
@@ -217,6 +243,28 @@ export default function App(){
                 </div>
                 <div className="mt-3 flex justify-end">
                   <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
+                </div>
+              </Card>
+
+              <Card>
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-5 h-5"/>
+                  <h2 className="text-lg font-medium">Guadagno nominale e reale nel tempo</h2>
+                </div>
+                <div className="h-72">
+                  <ResponsiveContainer>
+                    <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                      <XAxis dataKey="year" />
+                      <YAxis tickFormatter={(v)=>v.toLocaleString("it-IT")} />
+                      <Tooltip formatter={(v)=>fmt(v)} labelFormatter={(l)=>`Anno ${l}`} />
+                      <Legend />
+                      <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                      <Line type="monotone" dataKey={labelAN} stroke="#2563eb" strokeDasharray="5 5" dot={false} />
+                      <Line type="monotone" dataKey={labelAR} stroke="#2563eb" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey={labelBN} stroke="#f97316" strokeDasharray="5 5" dot={false} />
+                      <Line type="monotone" dataKey={labelBR} stroke="#f97316" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </Card>
 
