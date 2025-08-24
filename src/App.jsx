@@ -56,22 +56,20 @@ function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialC
   const principal = price*(1-downPct);
   const initialInvest = initialCapital;
 
-  function profit(y){
-    const fv = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, reinvest });
-    const contrib = initialInvest + monthlyExtra*12*y;
-    return fv - contrib;
+  function totalSaved(y){
+    return investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, reinvest });
   }
 
   function balance(y){
     return mortgageBalance({ principal, annualRate: tan, years, afterYears: y });
   }
 
-  if(profit(years) < balance(years)) return Infinity;
+  if(totalSaved(years) < balance(years)) return Infinity;
 
   let lo=0, hi=years;
   for(let i=0;i<60;i++){
     const mid=(lo+hi)/2;
-    if(profit(mid) >= balance(mid)) hi=mid; else lo=mid;
+    if(totalSaved(mid) >= balance(mid)) hi=mid; else lo=mid;
   }
   return (lo+hi)/2;
 }
