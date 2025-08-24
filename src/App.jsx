@@ -26,20 +26,19 @@ function mortgageCosts({ principal, annualRate, years, inflation }){
   let pvPayments = 0; for(let m=1;m<=n;m++) pvPayments += payment/Math.pow(1+im,m);
   const interestReal = pvPayments - principal; return { payment, totalPaid, interestNominal, interestReal };
 }
-function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, monthlyExtra=0, reinvest=true }){
+function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, initialCapital, monthlyExtra=0, reinvest=true }){
   const principal = price*(1-downPct);
-  const initialInvest = price - price*downPct; // capitale non usato sulla casa
-  const fvNominal = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years, reinvest });
+  const fvNominal = investFV({ initial: initialCapital, monthly: monthlyExtra, grossReturn, taxRate, years, reinvest });
   const { interestNominal, interestReal, payment } = mortgageCosts({ principal, annualRate: tan, years, inflation });
   const fvReal = fvNominal/Math.pow(1+inflation, years);
   const gainNominal = fvNominal - (principal + interestNominal);
   const gainReal = fvReal - (principal + interestReal);
-  return { principal, initialInvest, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
+  return { principal, initialCapital, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
 }
-function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, monthlyExtra=0, reinvest=true }){
+function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initialCapital, monthlyExtra=0, reinvest=true }){
   let lo=0, hi=0.2; // 0..20% lordo
   for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, monthlyExtra, reinvest }).gainReal;
+    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, initialCapital, monthlyExtra, reinvest }).gainReal;
     if(g>=0) hi=mid; else lo=mid;
   }
   return (lo+hi)/2;
@@ -53,9 +52,9 @@ function mortgageBalance({ principal, annualRate, years, afterYears }){
   return Math.max(0, bal);
 }
 
-function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, monthlyExtra=0, reinvest=true }){
+function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, reinvest=true }){
   const principal = price*(1-downPct);
-  const initialInvest = price - price*downPct;
+  const initialInvest = initialCapital;
 
   function profit(y){
     const fv = investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, reinvest });
@@ -132,7 +131,6 @@ function MiniTable({ title, sections }){
 
 function Stepper({ step }) {
   const labels = [
-    "Acquisto",
     "Mutuo",
     "Investimenti",
     "Stipendio",
@@ -175,7 +173,7 @@ function Stepper({ step }) {
 
 // -------------------- App --------------------
 export default function App(){
-  // Wizard: 0..5 (0 = landing)
+  // Wizard: 0..4 (0 = landing)
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -193,6 +191,7 @@ export default function App(){
   const [downPct, setDownPct] = useState(0.15);
   const [yearsA, setYearsA] = useState(10);
   const [yearsB, setYearsB] = useState(30);
+  const [initialCapital, setInitialCapital] = useState(price*(1-downPct));
 
   // Tassi
   const [tan, setTan] = useState(0.03);
@@ -209,33 +208,33 @@ export default function App(){
   const [minGainPct, setMinGainPct] = useState(0.1);
 
   // Calcoli
-  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, monthlyExtra, reinvest]);
-  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, monthlyExtra, reinvest]);
-  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, monthlyExtra, reinvest]);
-  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, monthlyExtra, reinvest]);
-  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, monthlyExtra, reinvest]);
-  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, monthlyExtra, reinvest]);
+  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, monthlyExtra, reinvest]);
+  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, monthlyExtra, reinvest]);
+  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, initialCapital, monthlyExtra, reinvest]);
+  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, initialCapital, monthlyExtra, reinvest]);
+  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, initialCapital, monthlyExtra, reinvest]);
+  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, initialCapital, monthlyExtra, reinvest]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
   const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
   const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
   const chartData = useMemo(()=>{
     const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
-      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra, reinvest }).gainReal;
-      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, monthlyExtra, reinvest }).gainReal;
+      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }).gainReal;
+      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }).gainReal;
       rows.push({ r:+(r*100).toFixed(2), [labelA]: gA, [labelB]: gB });
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, tax, infl, monthlyExtra, reinvest, labelA, labelB]);
+  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, monthlyExtra, reinvest, labelA, labelB]);
   const yearlyData = useMemo(()=>{
     const maxY=Math.max(yearsA, yearsB); const rows=[];
     for(let y=1;y<=maxY;y++){
       const row={ year:y };
-      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, monthlyExtra, reinvest }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
-      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, monthlyExtra, reinvest }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
+      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra, reinvest }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
+      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra, reinvest }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
       rows.push(row);
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, monthlyExtra, reinvest, labelAN, labelAR, labelBN, labelBR]);
+  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, monthlyExtra, reinvest, labelAN, labelAR, labelBN, labelBR]);
 
   const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
   const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
@@ -281,18 +280,7 @@ export default function App(){
 
           {!loading && step===1 && (
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 1 – Cosa vuoi acquistare?</h2>
-              <Grid>
-              </Grid>
-              <div className="flex justify-end">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
-              </div>
-            </motion.div>
-          )}
-
-          {!loading && step===2 && (
-            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Mutuo</h2>
+              <h2 className="text-lg font-medium">Step 1 – Mutuo</h2>
               <div className="space-y-3">
                 <Grid>
                 <Field label="Importo considerato (€)" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
@@ -305,6 +293,25 @@ export default function App(){
                   </Grid>
                 </div>
               <div className="flex justify-between">
+                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && step===2 && (
+            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+                <h2 className="text-lg font-medium">Step 2 – Investimenti</h2>
+                <div className="space-y-3">
+                  <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
+                  <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                  <Field label="Capitale iniziale (€)" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
+                  <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
+
+                </div>
+                <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
@@ -313,39 +320,21 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-                <h2 className="text-lg font-medium">Step 3 – Investimenti</h2>
-                <div className="space-y-3">
-                  <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                  <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
-                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
-                  <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
-                  
-                </div>
-                <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
-              </div>
-            </motion.div>
-          )}
-
-          {!loading && step===4 && (
-            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Dati utili all'analisi</h2>
+              <h2 className="text-lg font-medium">Step 3 – Dati utili all'analisi</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
                 <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
 
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(5);},2000);}} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
-          {!loading && step===5 && (
-            <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+          {!loading && step===4 && (
+            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
               <h2 className="text-lg font-medium">Here we go!</h2>
               <Card>
                 <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
@@ -475,7 +464,7 @@ export default function App(){
                 <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
               </div>
             </motion.div>
