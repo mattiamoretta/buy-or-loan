@@ -283,8 +283,6 @@ export default function App(){
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 1 – Cosa vuoi acquistare?</h2>
               <Grid>
-                <Field label="Prezzo casa (€)" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
-                <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
               </Grid>
               <div className="flex justify-end">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
@@ -294,11 +292,12 @@ export default function App(){
 
           {!loading && step===2 && (
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Mutuo e scenari</h2>
+              <h2 className="text-lg font-medium">Step 2 – Mutuo</h2>
               <div className="space-y-3">
                 <Grid>
-                  <Field label="TAN mutuo (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                  <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                <Field label="Importo considerato (€)" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
+                <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
+                <Field label="TAN (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                 </Grid>
                   <Grid>
                     <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1}/>
@@ -332,9 +331,11 @@ export default function App(){
 
           {!loading && step===4 && (
             <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Il tuo stipendio</h2>
+              <h2 className="text-lg font-medium">Step 4 – Dati utili all'analisi</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
+                <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
