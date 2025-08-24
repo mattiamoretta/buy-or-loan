@@ -263,7 +263,7 @@ export default function App(){
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
-          <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard - Cash oppure mutuo? 🚀</h1>
+          <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard 🚀</h1>
         </header>
 
         {step > 0 && <Stepper step={step} />}
@@ -283,7 +283,7 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
-              <h2 className="text-2xl font-bold">Scopri se conviene andare di cash oppure affidarsi ad un mutuo.</h2>
+              <h2 className="text-2xl font-bold">Una guida per la valutazione dell'impatto di un mutuo e relativi investimenti.</h2>
               <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore!</p>
               <button onClick={()=>setStep(1)} className="px-6 py-3 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
             </motion.div>
@@ -321,7 +321,7 @@ export default function App(){
               <h2 className="text-lg font-medium">Step 2 – Entrate</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                <Field label="Contributo mensile (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
+                <Field label="Contributo mensile oppure rendimento derivato dal mutuo (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
                 <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
               </div>
               <div className="flex justify-between">
