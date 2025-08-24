@@ -136,8 +136,8 @@ function MiniTable({ title, sections }){
 function Stepper({ step }) {
   const labels = [
     "Mutuo",
+    "Entrate",
     "Investimenti",
-    "Stipendio",
     "Risultati",
   ];
   const isFinal = step === labels.length;
@@ -203,12 +203,11 @@ export default function App(){
   const [tax, setTax] = useState(0.26);
   const [gross, setGross] = useState(0.05);
 
-  // Contributi
+  // Contributi e investimenti
   const [monthlyExtra, setMonthlyExtra] = useState(0);
   const [reinvest, setReinvest] = useState(true);
-  const [investError, setInvestError] = useState("");
 
-  // Stipendio
+  // Entrate
   const [salary, setSalary] = useState(30000);
   const [minGainPct, setMinGainPct] = useState(0.1);
 
@@ -250,16 +249,16 @@ export default function App(){
   const diffPctB = sB.gainReal / sB.principal - targetPct;
   const diffAmtB = sB.gainReal - sB.principal * targetPct;
 
-  const titleColor = step >= 4 ? "text-white" : "text-slate-800";
+    const titleColor = step >= 4 ? "text-white" : "text-slate-800";
+    const hasInvestment = initialCapital > 0 || reinvest;
 
-  const handleStep2Next = () => {
-    if(initialCapital <= 0 && monthlyExtra <= 0){
-      setInvestError("Inserisci almeno un capitale iniziale o un contributo mensile");
-      return;
-    }
-    setInvestError("");
-    setStep(3);
-  };
+    const handleInvestNext = () => {
+      if(initialCapital <= 0 && !reinvest){
+        alert("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
+      }
+      setLoading(true);
+      setTimeout(()=>{setLoading(false); setStep(4);},2000);
+    };
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
@@ -321,55 +320,58 @@ export default function App(){
 
           {!loading && step===2 && (
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-                <h2 className="text-lg font-medium">Step 2 – Investimenti</h2>
-                <div className="space-y-3">
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Rendimento</h3>
-                    <Grid>
-                      <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                      <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
-                    </Grid>
-                  </Card>
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Obiettivo</h3>
-                    <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                  </Card>
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
-                    <Grid>
-                      <Field label="Capitale iniziale (€)" description="Somma che investi subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                      <Field label="Contributo mensile (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
-                    </Grid>
-                    <Checkbox label="Reinvesti mensilmente" description="Riutilizza gli interessi maturati" checked={reinvest} onChange={setReinvest} />
-                    {investError && <p className="text-sm text-red-600 mt-2">{investError}</p>}
-                  </Card>
-                </div>
-                <div className="flex justify-between">
+              <h2 className="text-lg font-medium">Step 2 – Entrate</h2>
+              <div className="space-y-3">
+                <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
+                <Field label="Contributo mensile (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
+                <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+              </div>
+              <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={handleStep2Next} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Dati utili all'analisi</h2>
+              <h2 className="text-lg font-medium">Step 3 – Investimenti</h2>
               <div className="space-y-3">
-                <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
-
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Rendimento</h3>
+                  <Grid>
+                    <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
+                    <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                  </Grid>
+                </Card>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Obiettivo</h3>
+                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                </Card>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
+                  <Grid>
+                    <Field label="Capitale iniziale (€)" description="Somma che investi subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                  </Grid>
+                  <Checkbox label="Reinvesti mensilmente" description="Riutilizza gli interessi maturati" checked={reinvest} onChange={setReinvest} />
+                </Card>
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>{setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
 
-          {!loading && step===4 && (
-            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-              <h2 className="text-lg font-medium">Here we go!</h2>
-              <Card>
+            {!loading && step===4 && (
+              <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+                <h2 className="text-lg font-medium">Here we go!</h2>
+                {!hasInvestment && (
+                  <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
+                )}
+                {hasInvestment ? (
+                <>
+                  <Card>
                 <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <KPICard title="Rata" value={fmt2(sA.payment)} subtitle="€/mese"/>
@@ -492,7 +494,43 @@ export default function App(){
                     <p className="text-xs text-slate-500 mt-2">Con durate più lunghe l'interesse composto aiuta: sopra il break-even i vantaggi crescono molto più che nei periodi brevi.</p>
                   </div>
                 </div>
-              </Card>
+                </Card>
+                </>
+              ) : (
+                <>
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <KPICard title="Rata" value={fmt2(sA.payment)} subtitle="€/mese"/>
+                    </div>
+                    <div className="mt-4">
+                      <MiniTable
+                        title="Dettagli"
+                        sections={[
+                          { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
+                          { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
+                        ]}
+                      />
+                    </div>
+                  </Card>
+
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Mutuo {yearsB} anni</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <KPICard title="Rata" value={fmt2(sB.payment)} subtitle="€/mese"/>
+                    </div>
+                    <div className="mt-4">
+                      <MiniTable
+                        title="Dettagli"
+                        sections={[
+                          { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
+                          { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
+                        ]}
+                      />
+                    </div>
+                  </Card>
+                </>
+              )}
               <div className="flex justify-end">
                 <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
               </div>
