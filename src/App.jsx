@@ -79,24 +79,28 @@ function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialC
 // -------------------- UI helpers --------------------
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
-function Field({ label, value, onChange, min, max, step, prefix, suffix }){
+function Field({ label, value, onChange, min, max, step, prefix, suffix, description }){
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm text-slate-600">{label}</label>
       <div className="flex items-center gap-2">
         {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
-        <input type="number" className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300" value={value} onChange={(e)=>onChange(parseFloat(e.target.value||"0"))} min={min} max={max} step={step} />
+        <input type="number" inputMode="decimal" className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300" value={value} onChange={(e)=>onChange(parseFloat(e.target.value||"0"))} min={min} max={max} step={step} />
         {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
       </div>
+      {description && <span className="text-xs text-slate-500">{description}</span>}
     </div>
   );
 }
-function Checkbox({ label, checked, onChange }){
+function Checkbox({ label, checked, onChange, description }){
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-600">
-      <input type="checkbox" className="rounded" checked={checked} onChange={(e)=>onChange(e.target.checked)} />
-      {label}
-    </label>
+    <div className="flex flex-col gap-1">
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" className="rounded" checked={checked} onChange={(e)=>onChange(e.target.checked)} />
+        {label}
+      </label>
+      {description && <span className="text-xs text-slate-500 ml-6">{description}</span>}
+    </div>
   );
 }
 function KPICard({ title, value, subtitle }){
@@ -202,6 +206,7 @@ export default function App(){
   // Contributi
   const [monthlyExtra, setMonthlyExtra] = useState(0);
   const [reinvest, setReinvest] = useState(true);
+  const [investError, setInvestError] = useState("");
 
   // Stipendio
   const [salary, setSalary] = useState(30000);
@@ -247,6 +252,15 @@ export default function App(){
 
   const titleColor = step >= 4 ? "text-white" : "text-slate-800";
 
+  const handleStep2Next = () => {
+    if(initialCapital <= 0 && monthlyExtra <= 0){
+      setInvestError("Inserisci almeno un capitale iniziale o un contributo mensile");
+      return;
+    }
+    setInvestError("");
+    setStep(3);
+  };
+
   return (
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
       <div className="max-w-5xl mx-auto p-6">
@@ -282,16 +296,22 @@ export default function App(){
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 1 – Mutuo</h2>
               <div className="space-y-3">
-                <Grid>
-                <Field label="Importo considerato (€)" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
-                <Field label="Anticipo (%)" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
-                <Field label="TAN (%)" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                </Grid>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
                   <Grid>
-                    <Field label="Durata scenario A (anni)" value={yearsA} onChange={setYearsA} min={1} max={40} step={1}/>
-                    <Field label="Durata scenario B (anni)" value={yearsB} onChange={setYearsB} min={1} max={40} step={1}/>
+                    <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
+                    <Field label="Anticipo (%)" description="Percentuale di anticipo che puoi versare" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
+                    <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
-                </div>
+                </Card>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Scenari</h3>
+                  <Grid>
+                    <Field label="Durata scenario A (anni)" description="Durata del primo confronto" value={yearsA} onChange={setYearsA} min={1} max={40} step={1}/>
+                    <Field label="Durata scenario B (anni)" description="Durata del secondo confronto" value={yearsB} onChange={setYearsB} min={1} max={40} step={1}/>
+                  </Grid>
+                </Card>
+              </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
@@ -303,17 +323,30 @@ export default function App(){
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
                 <h2 className="text-lg font-medium">Step 2 – Investimenti</h2>
                 <div className="space-y-3">
-                  <Field label="Rendimento lordo (%)" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                  <Field label="Tasse rendimenti (%)" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
-                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                  <Field label="Capitale iniziale (€)" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                  <Field label="Contributo mensile (€)" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
-                  <Checkbox label="Reinvesti mensilmente" checked={reinvest} onChange={setReinvest} />
-
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Rendimento</h3>
+                    <Grid>
+                      <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
+                      <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                    </Grid>
+                  </Card>
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Obiettivo</h3>
+                    <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                  </Card>
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
+                    <Grid>
+                      <Field label="Capitale iniziale (€)" description="Somma che investi subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                      <Field label="Contributo mensile (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
+                    </Grid>
+                    <Checkbox label="Reinvesti mensilmente" description="Riutilizza gli interessi maturati" checked={reinvest} onChange={setReinvest} />
+                    {investError && <p className="text-sm text-red-600 mt-2">{investError}</p>}
+                  </Card>
                 </div>
                 <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <button onClick={handleStep2Next} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
               </div>
             </motion.div>
           )}
@@ -322,8 +355,8 @@ export default function App(){
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 3 – Dati utili all'analisi</h2>
               <div className="space-y-3">
-                <Field label="Stipendio netto annuale" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                <Field label="Inflazione (%)" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
+                <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
 
               </div>
               <div className="flex justify-between">
