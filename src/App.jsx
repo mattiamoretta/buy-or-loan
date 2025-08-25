@@ -332,8 +332,8 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
 function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl, gross, tax, investInitial, investMonthly, minGainPct, salary }){
   return (
     <details className="mb-4">
-      <summary className="cursor-pointer text-sm text-orange-600">Riepilogo dati</summary>
-      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+      <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">Riepilogo dati</summary>
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-orange-50 p-2 rounded">
         <span>Prezzo casa: <b>{fmt(price)}</b></span>
         <span>Anticipo: <b>{pct(downPct)}</b></span>
         <span>TAN: <b>{pct(tan)}</b></span>
@@ -1013,7 +1013,10 @@ export default function App(){
                               <Legend />
                               <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
                               {scenarioStats.map(({ label }, idx) => (
-                                <Line key={label} type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
+                                <React.Fragment key={label}>
+                                  <Line type="monotone" dataKey={`${label} nominale`} stroke={colors[idx % colors.length]} strokeDasharray="5 5" dot={false} />
+                                  <Line type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
+                                </React.Fragment>
                               ))}
                             </LineChart>
                           </ResponsiveContainer>
