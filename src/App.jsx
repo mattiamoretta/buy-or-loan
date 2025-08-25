@@ -11,15 +11,15 @@ const pct = (n) => `${(n * 100).toFixed(2)}%`;
 function pmt(principal, annualRate, years){
   const r = annualRate/12; const n = years*12; return (principal*r)/(1-Math.pow(1+r,-n));
 }
-function investFV({ initial, monthly, grossReturn, taxRate, years, investInitial=true, investMonthly=true }){
-  const rNet = (grossReturn||0)*(1-taxRate);
-  const rm = rNet/12;
-  const months = Math.round(years*12);
+function investFV({ initial=0, monthly=0, grossReturn=0, taxRate=0, years=0, investInitial=true, investMonthly=true }){
+  const rNet = grossReturn * (1 - taxRate);
+  const rm = rNet / 12;
+  const months = Math.round(years * 12);
   let v = investInitial ? initial : 0;
   let saved = investInitial ? 0 : initial;
-  for(let m=1;m<=months;m++){
-    v = v*(1+rm);
-    if(investMonthly) v += (monthly||0); else saved += (monthly||0);
+  for (let m = 1; m <= months; m++) {
+    v = v * (1 + rm);
+    if (investMonthly) v += monthly; else saved += monthly;
   }
   return v + saved;
 }
@@ -29,12 +29,13 @@ function mortgageCosts({ principal, annualRate, years, inflation }){
   const interestReal = pvPayments - principal; return { payment, totalPaid, interestNominal, interestReal };
 }
 function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
-  const principal = price*(1-downPct);
+  const principal = price * (1 - downPct);
   const fvNominal = investFV({ initial: initialCapital, monthly: monthlyExtra, grossReturn, taxRate, years, investInitial, investMonthly });
   const { interestNominal, interestReal, payment } = mortgageCosts({ principal, annualRate: tan, years, inflation });
-  const fvReal = fvNominal/Math.pow(1+inflation, years);
-  const gainNominal = fvNominal - (principal + interestNominal);
-  const gainReal = fvReal - (principal + interestReal);
+  const fvReal = fvNominal / Math.pow(1 + inflation, years);
+  const totalContrib = (investInitial ? initialCapital : 0) + (investMonthly ? monthlyExtra * years * 12 : 0);
+  const gainNominal = fvNominal - totalContrib - interestNominal;
+  const gainReal = fvReal - totalContrib - interestReal;
   return { principal, initialCapital, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
 }
 function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
@@ -52,6 +53,23 @@ function mortgageBalance({ principal, annualRate, years, afterYears }){
   const r = annualRate/12; const t = Math.round(afterYears*12);
   const bal = principal*Math.pow(1+r, t) - payment*((Math.pow(1+r, t)-1)/r);
   return Math.max(0, bal);
+}
+
+function amortizationSchedule({ principal, annualRate, years }) {
+  const payment = pmt(principal, annualRate, years);
+  const r = annualRate / 12;
+  const n = Math.round(years * 12);
+  let balance = principal;
+  let paidPrincipal = 0;
+  const rows = [];
+  for (let m = 1; m <= n; m++) {
+    const interest = balance * r;
+    const capital = payment - interest;
+    balance = Math.max(0, balance - capital);
+    paidPrincipal += capital;
+    rows.push({ month: m, interest, capital, balance, paidPrincipal });
+  }
+  return rows;
 }
 
 function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
@@ -130,6 +148,39 @@ function MiniTable({ title, sections }){
         ))}
       </div>
     </div>
+  );
+}
+
+function AmortizationTable({ principal, annualRate, years }) {
+  const rows = useMemo(() => amortizationSchedule({ principal, annualRate, years }), [principal, annualRate, years]);
+  return (
+    <details className="mt-4">
+      <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
+      <div className="overflow-x-auto mt-2">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-100">
+            <tr>
+              <th className="px-2 py-1 text-left">Mese</th>
+              <th className="px-2 py-1 text-right">Interessi</th>
+              <th className="px-2 py-1 text-right">Capitale</th>
+              <th className="px-2 py-1 text-right">Residuo</th>
+              <th className="px-2 py-1 text-right">Capitale tot.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.month} className="odd:bg-white even:bg-slate-50">
+                <td className="px-2 py-1">{r.month}</td>
+                <td className="px-2 py-1 text-right">{fmt2(r.interest)}</td>
+                <td className="px-2 py-1 text-right">{fmt2(r.capital)}</td>
+                <td className="px-2 py-1 text-right">{fmt2(r.balance)}</td>
+                <td className="px-2 py-1 text-right">{fmt2(r.paidPrincipal)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }
 
@@ -392,6 +443,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                     ]}
                   />
+                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} />
                 </div>
               </Card>
 
@@ -412,6 +464,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                     ]}
                   />
+                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} />
                 </div>
               </Card>
 
@@ -515,6 +568,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                         ]}
                       />
+                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} />
                     </div>
                   </Card>
 
@@ -531,6 +585,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                         ]}
                       />
+                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} />
                     </div>
                   </Card>
                 </>
