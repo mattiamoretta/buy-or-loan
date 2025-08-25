@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Re
 import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards } from "lucide-react";
 
 import { Link } from "react-router-dom";
+import MutuoVsInvestimento from "./MutuoVsInvestimento.jsx";
 
 // -------------------- Utils --------------------
 const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -636,6 +637,7 @@ export default function App(){
                   <GuideCard to="/investimento" title="Investimento" description="Strategie di investimento." />
                 </div>
               </section>
+              <MutuoVsInvestimento />
             </motion.div>
           )}
 
