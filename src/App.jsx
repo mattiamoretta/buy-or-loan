@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Calculator, TrendingUp, ArrowRight } from "lucide-react";
@@ -55,21 +55,31 @@ function mortgageBalance({ principal, annualRate, years, afterYears }){
   return Math.max(0, bal);
 }
 
-function amortizationSchedule({ principal, annualRate, years }) {
+function amortizationSchedule({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
   const payment = pmt(principal, annualRate, years);
   const r = annualRate / 12;
+  const rm = grossReturn * (1 - taxRate) / 12;
   const n = Math.round(years * 12);
   let balance = principal;
   let paidPrincipal = 0;
+  let v = investInitial ? initial : 0;
+  let saved = investInitial ? 0 : initial;
+  let payoffMonth = null;
   const rows = [];
   for (let m = 1; m <= n; m++) {
     const interest = balance * r;
     const capital = payment - interest;
     balance = Math.max(0, balance - capital);
     paidPrincipal += capital;
-    rows.push({ month: m, interest, capital, balance, paidPrincipal });
+
+    v = v * (1 + rm);
+    if (investMonthly) v += monthly; else saved += monthly;
+    const available = v + saved;
+    if (payoffMonth === null && available >= balance) payoffMonth = m;
+
+    rows.push({ month: m, interest, capital, balance, paidPrincipal, available });
   }
-  return rows;
+  return { rows, payoffMonth };
 }
 
 function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
@@ -98,12 +108,25 @@ function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialC
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
 function Field({ label, value, onChange, min, max, step, prefix, suffix, description }){
+  const [display, setDisplay] = useState(value.toString());
+  useEffect(() => {
+    if (display !== "" && parseFloat(display) !== value) setDisplay(value.toString());
+  }, [value]);
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm text-slate-600">{label}</label>
       <div className="flex items-center gap-2">
         {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
-        <input type="number" inputMode="decimal" className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300" value={value} onChange={(e)=>onChange(parseFloat(e.target.value||"0"))} min={min} max={max} step={step} />
+        <input
+          type="number"
+          inputMode="decimal"
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          value={display}
+          onChange={(e)=>{ const val = e.target.value; setDisplay(val); onChange(val === "" ? 0 : parseFloat(val)); }}
+          min={min}
+          max={max}
+          step={step}
+        />
         {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
       </div>
       {description && <span className="text-xs text-slate-500">{description}</span>}
@@ -151,8 +174,9 @@ function MiniTable({ title, sections }){
   );
 }
 
-function AmortizationTable({ principal, annualRate, years }) {
-  const rows = useMemo(() => amortizationSchedule({ principal, annualRate, years }), [principal, annualRate, years]);
+function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
+  const { rows, payoffMonth } = useMemo(() => amortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
+  const showSavings = initial > 0 || monthly > 0;
   return (
     <details className="mt-4">
       <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
@@ -165,16 +189,18 @@ function AmortizationTable({ principal, annualRate, years }) {
               <th className="px-2 py-1 text-right">Capitale</th>
               <th className="px-2 py-1 text-right">Residuo</th>
               <th className="px-2 py-1 text-right">Capitale tot.</th>
+              {showSavings && <th className="px-2 py-1 text-right">Disp. potenziale</th>}
             </tr>
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.month} className="odd:bg-white even:bg-slate-50">
+              <tr key={r.month} className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}>
                 <td className="px-2 py-1">{r.month}</td>
                 <td className="px-2 py-1 text-right">{fmt2(r.interest)}</td>
                 <td className="px-2 py-1 text-right">{fmt2(r.capital)}</td>
                 <td className="px-2 py-1 text-right">{fmt2(r.balance)}</td>
                 <td className="px-2 py-1 text-right">{fmt2(r.paidPrincipal)}</td>
+                {showSavings && <td className="px-2 py-1 text-right">{fmt2(r.available)}</td>}
               </tr>
             ))}
           </tbody>
@@ -443,7 +469,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                     ]}
                   />
-                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} />
+                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                 </div>
               </Card>
 
@@ -464,7 +490,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                     ]}
                   />
-                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} />
+                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                 </div>
               </Card>
 
@@ -568,7 +594,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                         ]}
                       />
-                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} />
+                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                     </div>
                   </Card>
 
@@ -585,7 +611,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                         ]}
                       />
-                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} />
+                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                     </div>
                   </Card>
                 </>
