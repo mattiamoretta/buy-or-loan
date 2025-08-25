@@ -133,6 +133,53 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix, descrip
     </div>
   );
 }
+
+function YearSelector({ label, value, onChange, description }){
+  const presets = [10, 20, 30];
+  const [custom, setCustom] = useState(!presets.includes(value));
+  useEffect(() => {
+    setCustom(!presets.includes(value));
+  }, [value]);
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm text-slate-600">{label}</label>
+      <div className="flex items-center gap-2 flex-wrap">
+        {presets.map((p) => (
+          <button
+            key={p}
+            type="button"
+            className={`px-3 py-1 rounded-lg text-sm ${
+              !custom && value === p ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
+            }`}
+            onClick={() => { onChange(p); setCustom(false); }}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`px-3 py-1 rounded-lg text-sm ${
+            custom ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
+          }`}
+          onClick={() => setCustom(true)}
+        >
+          Custom
+        </button>
+        {custom && (
+          <input
+            type="number"
+            className="w-20 rounded-xl border border-slate-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-300"
+            value={value}
+            onChange={(e) => onChange(e.target.value === "" ? 0 : parseInt(e.target.value))}
+            min={1}
+            max={40}
+          />
+        )}
+      </div>
+      {description && <span className="text-xs text-slate-500">{description}</span>}
+    </div>
+  );
+}
 function Checkbox({ label, checked, onChange, description }){
   return (
     <div className="flex flex-col gap-1">
@@ -180,8 +227,8 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   return (
     <details className="mt-4">
       <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
-      <div className="overflow-x-auto mt-2">
-        <table className="min-w-full text-xs">
+      <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
+        <table className="min-w-full text-xs tabular-nums">
           <thead className="bg-slate-100">
             <tr>
               <th className="px-2 py-1 text-left">Mese</th>
@@ -195,12 +242,12 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
           <tbody>
             {rows.map(r => (
               <tr key={r.month} className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}>
-                <td className="px-2 py-1">{r.month}</td>
-                <td className="px-2 py-1 text-right">{fmt2(r.interest)}</td>
-                <td className="px-2 py-1 text-right">{fmt2(r.capital)}</td>
-                <td className="px-2 py-1 text-right">{fmt2(r.balance)}</td>
-                <td className="px-2 py-1 text-right">{fmt2(r.paidPrincipal)}</td>
-                {showSavings && <td className="px-2 py-1 text-right">{fmt2(r.available)}</td>}
+                <td className="px-2 py-1 font-mono text-right">{r.month}</td>
+                <td className="px-2 py-1 font-mono text-right">{fmt2(r.interest)}</td>
+                <td className="px-2 py-1 font-mono text-right">{fmt2(r.capital)}</td>
+                <td className="px-2 py-1 font-mono text-right">{fmt2(r.balance)}</td>
+                <td className="px-2 py-1 font-mono text-right">{fmt2(r.paidPrincipal)}</td>
+                {showSavings && <td className="px-2 py-1 font-mono text-right">{fmt2(r.available)}</td>}
               </tr>
             ))}
           </tbody>
@@ -281,7 +328,7 @@ export default function App(){
   const [gross, setGross] = useState(0.05);
 
   // Contributi e investimenti
-  const [monthlyAvail, setMonthlyAvail] = useState(0);
+  const [cois, setCois] = useState(0);
   const [investInitial, setInvestInitial] = useState(true);
   const [investMonthly, setInvestMonthly] = useState(true);
 
@@ -290,33 +337,33 @@ export default function App(){
   const [minGainPct, setMinGainPct] = useState(0.1);
 
   // Calcoli
-  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
-  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
-  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
-  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
-  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, initialCapital, monthlyAvail, investInitial, investMonthly]);
-  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, initialCapital, cois, investInitial, investMonthly]);
+  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, initialCapital, cois, investInitial, investMonthly]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
   const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
   const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
   const chartData = useMemo(()=>{
     const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
-      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }).gainReal;
-      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }).gainReal;
+      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }).gainReal;
+      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }).gainReal;
       rows.push({ r:+(r*100).toFixed(2), [labelA]: gA, [labelB]: gB });
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly, labelA, labelB]);
+  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, cois, investInitial, investMonthly, labelA, labelB]);
   const yearlyData = useMemo(()=>{
     const maxY=Math.max(yearsA, yearsB); const rows=[];
     for(let y=1;y<=maxY;y++){
       const row={ year:y };
-      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
-      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
+      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
+      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
       rows.push(row);
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly, labelAN, labelAR, labelBN, labelBR]);
+  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, cois, investInitial, investMonthly, labelAN, labelAR, labelBN, labelBR]);
 
   const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
   const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
@@ -328,10 +375,10 @@ export default function App(){
   const diffAmtB = sB.gainReal - sB.principal * targetPct;
 
     const titleColor = step >= 4 ? "text-white" : "text-slate-800";
-    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyAvail > 0);
+    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
 
     const handleInvestNext = () => {
-      if((!investInitial || initialCapital<=0) && (!investMonthly || monthlyAvail<=0)){
+      if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
         alert("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
       }
       setLoading(true);
@@ -384,8 +431,8 @@ export default function App(){
                 <Card>
                   <h3 className="text-md font-medium mb-2">Scenari</h3>
                   <Grid>
-                    <Field label="Durata scenario A (anni)" description="Durata del primo confronto" value={yearsA} onChange={setYearsA} min={1} max={40} step={1}/>
-                    <Field label="Durata scenario B (anni)" description="Durata del secondo confronto" value={yearsB} onChange={setYearsB} min={1} max={40} step={1}/>
+                    <YearSelector label="Durata scenario A (anni)" description="Durata del primo confronto" value={yearsA} onChange={setYearsA} />
+                    <YearSelector label="Durata scenario B (anni)" description="Durata del secondo confronto" value={yearsB} onChange={setYearsB} />
                   </Grid>
                 </Card>
               </div>
@@ -400,8 +447,14 @@ export default function App(){
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">Step 2 – Entrate</h2>
               <div className="space-y-3">
-                <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Risorse</h3>
+                  <Grid>
+                    <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                    <Field label="COIS mensile (€)" description="Somma disponibile ogni mese" value={cois} onChange={setCois} min={0} max={50000} step={50} suffix="€" />
+                    <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                  </Grid>
+                </Card>
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
@@ -427,14 +480,14 @@ export default function App(){
                 </Card>
                 <Card>
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
-                  <Grid>
-                    <Field label="Capitale iniziale (€)" description="Somma che investi subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                    <Field label="Disponibilità mensile (€)" description="Somma disponibile ogni mese" value={monthlyAvail} onChange={setMonthlyAvail} min={0} max={50000} step={50} suffix="€" />
-                  </Grid>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
                     <Checkbox label="Investi capitale iniziale" checked={investInitial} onChange={setInvestInitial} />
-                    <Checkbox label="Investi disponibilità mensile" checked={investMonthly} onChange={setInvestMonthly} />
+                    <Checkbox label="Investi COIS mensile" checked={investMonthly} onChange={setInvestMonthly} />
                   </div>
+                </Card>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Indicatore</h3>
+                  <Field label="Stipendio netto annuale" description="Usato solo per ragionare sul guadagno dall'investimento" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
                 </Card>
               </div>
               <div className="flex justify-between">
@@ -469,7 +522,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                     ]}
                   />
-                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                 </div>
               </Card>
 
@@ -490,7 +543,7 @@ export default function App(){
                       { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                     ]}
                   />
-                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                 </div>
               </Card>
 
@@ -594,7 +647,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
                         ]}
                       />
-                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                     </div>
                   </Card>
 
@@ -611,7 +664,7 @@ export default function App(){
                           { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
                         ]}
                       />
-                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={monthlyAvail} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                     </div>
                   </Card>
                 </>
