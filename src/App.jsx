@@ -135,22 +135,39 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix, descrip
   );
 }
 
-function Popup({ message, onClose }){
+function Popup({ message, onConfirm, onCancel }){
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white p-6 rounded-xl shadow max-w-sm text-center">
-        <p className="mb-4 text-sm">{message}</p>
-        <button onClick={onClose} className="px-4 py-2 bg-orange-600 text-white rounded-xl">OK</button>
+      <div className="bg-white p-6 rounded-xl shadow max-w-sm text-center space-y-4">
+        <p className="text-sm">{message}</p>
+        <div className="flex justify-center gap-3">
+          {onCancel && (
+            <button onClick={onCancel} className="px-4 py-2 rounded-xl border">Annulla</button>
+          )}
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-orange-600 text-white rounded-xl"
+          >
+            {onCancel ? "Prosegui" : "OK"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function ConfigCard({ title, description, onSteps, onResults }){
+function ConfigCard({ title, description, details = [], onSteps, onResults }){
   return (
     <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
       <h3 className="text-md font-medium text-slate-800">{title}</h3>
-      <p className="text-sm text-slate-600 flex-1">{description}</p>
+      <p className="text-sm text-slate-600">{description}</p>
+      {details.length > 0 && (
+        <ul className="text-xs text-slate-600 mt-1 space-y-1">
+          {details.map((d, i) => (
+            <li key={i}>{d}</li>
+          ))}
+        </ul>
+      )}
       <div className="flex gap-2 justify-center mt-2">
         {onSteps && (
           <button onClick={onSteps} className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm">Vedi step</button>
@@ -407,6 +424,23 @@ export default function App(){
     const titleColor = step >= 4 ? "text-white" : "text-slate-800";
     const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
 
+    const resetAll = () => {
+      setPrice(150000);
+      setDownPct(0.15);
+      setYearsA(10);
+      setYearsB(30);
+      setInitialCapital(150000*(1-0.15));
+      setTan(0.03);
+      setInfl(0.02);
+      setTax(0.26);
+      setGross(0.05);
+      setCois(0);
+      setInvestInitial(true);
+      setInvestMonthly(true);
+      setSalary(30000);
+      setMinGainPct(0.1);
+    };
+
     const applyConfig = (cfg) => {
       switch(cfg){
         case 1:
@@ -423,17 +457,24 @@ export default function App(){
     };
 
     const handleInvestNext = () => {
+      const proceed = () => {
+        setLoading(true);
+        setTimeout(()=>{setLoading(false); setStep(4);},2000);
+      };
       if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
-        setPopup("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
+        setPopup({
+          message: "Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.",
+          onConfirm: () => { setPopup(null); proceed(); },
+          onCancel: () => setPopup(null),
+        });
         return;
       }
-      setLoading(true);
-      setTimeout(()=>{setLoading(false); setStep(4);},2000);
+      proceed();
     };
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
-      {popup && <Popup message={popup} onClose={()=>setPopup(null)} />}
+      {popup && <Popup {...popup} />}
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
@@ -457,29 +498,36 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-              <h2 className="text-2xl font-bold text-center">Scegli una configurazione</h2>
+              <div className="text-center">
+                <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">Inizia</button>
+              </div>
+              <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ConfigCard
                   title="Solo mutuo"
                   description="Vedi solo l'andamento del mutuo"
+                  details={["Mutuo €150k", "Anticipo 15%", "Nessun investimento"]}
                   onSteps={()=>{applyConfig(1); setStep(1);}}
                   onResults={()=>{applyConfig(1); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
                 />
                 <ConfigCard
                   title="Mutuo con risparmi o rendita"
                   description="Scopri quando chiudere in anticipo"
+                  details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
                   onSteps={()=>{applyConfig(2); setStep(1);}}
                   onResults={()=>{applyConfig(2); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
                 />
                 <ConfigCard
                   title="Mutuo con disponibilità investita"
                   description="Valuta la chiusura anticipata investendo la disponibilità"
+                  details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
                   onSteps={()=>{applyConfig(3); setStep(1);}}
                   onResults={()=>{applyConfig(3); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
                 />
                 <ConfigCard
                   title="Mutuo vs capitale già investito"
                   description="Decidi se accendere un mutuo avendo capitale investito"
+                  details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
                   onSteps={()=>{applyConfig(4); setStep(1);}}
                   onResults={()=>{applyConfig(4); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
                 />
@@ -514,9 +562,12 @@ export default function App(){
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <div className="flex gap-2">
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
+                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                </div>
               </div>
-            </motion.div>
+              </motion.div>
           )}
 
           {!loading && step===2 && (
@@ -534,9 +585,12 @@ export default function App(){
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                <div className="flex gap-2">
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
+                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                </div>
               </div>
-            </motion.div>
+              </motion.div>
           )}
 
           {!loading && step===3 && (
@@ -572,9 +626,12 @@ export default function App(){
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
-                <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                <div className="flex gap-2">
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
+                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                </div>
               </div>
-            </motion.div>
+              </motion.div>
           )}
 
             {!loading && step===4 && (
@@ -754,7 +811,7 @@ export default function App(){
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
+                <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
               </div>
             </motion.div>
           )}
