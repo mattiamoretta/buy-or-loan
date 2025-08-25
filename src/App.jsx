@@ -119,8 +119,9 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix, descrip
         {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
         <input
           type="number"
-          inputMode="decimal"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 [appearance:textfield]"
           value={display}
           onChange={(e)=>{ const val = e.target.value; setDisplay(val); onChange(val === "" ? 0 : parseFloat(val)); }}
           min={min}
@@ -130,6 +131,34 @@ function Field({ label, value, onChange, min, max, step, prefix, suffix, descrip
         {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
       </div>
       {description && <span className="text-xs text-slate-500">{description}</span>}
+    </div>
+  );
+}
+
+function Popup({ message, onClose }){
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white p-6 rounded-xl shadow max-w-sm text-center">
+        <p className="mb-4 text-sm">{message}</p>
+        <button onClick={onClose} className="px-4 py-2 bg-orange-600 text-white rounded-xl">OK</button>
+      </div>
+    </div>
+  );
+}
+
+function ConfigCard({ title, description, onSteps, onResults }){
+  return (
+    <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
+      <h3 className="text-md font-medium text-slate-800">{title}</h3>
+      <p className="text-sm text-slate-600 flex-1">{description}</p>
+      <div className="flex gap-2 justify-center mt-2">
+        {onSteps && (
+          <button onClick={onSteps} className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm">Vedi step</button>
+        )}
+        {onResults && (
+          <button onClick={onResults} className="px-3 py-1 bg-orange-600 text-white rounded-xl text-sm">Risultati</button>
+        )}
+      </div>
     </div>
   );
 }
@@ -229,7 +258,7 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
       <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
       <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
         <table className="min-w-full text-xs tabular-nums">
-          <thead className="bg-slate-100">
+          <thead className="bg-slate-100 sticky top-0 z-10">
             <tr>
               <th className="px-2 py-1 text-left">Mese</th>
               <th className="px-2 py-1 text-right">Interessi</th>
@@ -304,6 +333,7 @@ export default function App(){
   // Wizard: 0..4 (0 = landing)
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState(null);
 
   const backgrounds = [
     'from-orange-50 via-amber-50 to-yellow-50',
@@ -377,9 +407,25 @@ export default function App(){
     const titleColor = step >= 4 ? "text-white" : "text-slate-800";
     const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
 
+    const applyConfig = (cfg) => {
+      switch(cfg){
+        case 1:
+          setInitialCapital(0); setCois(0); setInvestInitial(false); setInvestMonthly(false); break;
+        case 2:
+          setInitialCapital(0); setCois(300); setInvestInitial(false); setInvestMonthly(false); break;
+        case 3:
+          setInitialCapital(0); setCois(300); setInvestInitial(false); setInvestMonthly(true); break;
+        case 4:
+          setInitialCapital(50000); setCois(0); setInvestInitial(true); setInvestMonthly(false); break;
+        default:
+          break;
+      }
+    };
+
     const handleInvestNext = () => {
       if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
-        alert("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
+        setPopup("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
+        return;
       }
       setLoading(true);
       setTimeout(()=>{setLoading(false); setStep(4);},2000);
@@ -387,6 +433,7 @@ export default function App(){
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
+      {popup && <Popup message={popup} onClose={()=>setPopup(null)} />}
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
@@ -409,10 +456,39 @@ export default function App(){
           )}
 
           {!loading && step===0 && (
-            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6 text-center">
-              <h2 className="text-2xl font-bold">Una guida per la valutazione dell'impatto di un mutuo e relativi investimenti.</h2>
-              <p className="text-slate-600">Simula scenari diversi e trova la scelta migliore!</p>
-              <button onClick={()=>setStep(1)} className="px-6 py-3 bg-orange-600 text-white rounded-xl inline-flex items-center gap-2">Prova ora <ArrowRight className="w-4 h-4"/></button>
+            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+              <h2 className="text-2xl font-bold text-center">Scegli una configurazione</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ConfigCard
+                  title="Solo mutuo"
+                  description="Vedi solo l'andamento del mutuo"
+                  onSteps={()=>{applyConfig(1); setStep(1);}}
+                  onResults={()=>{applyConfig(1); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                />
+                <ConfigCard
+                  title="Mutuo con risparmi o rendita"
+                  description="Scopri quando chiudere in anticipo"
+                  onSteps={()=>{applyConfig(2); setStep(1);}}
+                  onResults={()=>{applyConfig(2); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                />
+                <ConfigCard
+                  title="Mutuo con disponibilità investita"
+                  description="Valuta la chiusura anticipata investendo la disponibilità"
+                  onSteps={()=>{applyConfig(3); setStep(1);}}
+                  onResults={()=>{applyConfig(3); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                />
+                <ConfigCard
+                  title="Mutuo vs capitale già investito"
+                  description="Decidi se accendere un mutuo avendo capitale investito"
+                  onSteps={()=>{applyConfig(4); setStep(1);}}
+                  onResults={()=>{applyConfig(4); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                />
+                <ConfigCard
+                  title="Personalizzato"
+                  description="Imposta i tuoi valori"
+                  onSteps={()=>{setStep(1);}}
+                />
+              </div>
             </motion.div>
           )}
 
@@ -451,7 +527,7 @@ export default function App(){
                   <h3 className="text-md font-medium mb-2">Risorse</h3>
                   <Grid>
                     <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                    <Field label="COIS mensile (€)" description="Somma disponibile ogni mese" value={cois} onChange={setCois} min={0} max={50000} step={50} suffix="€" />
+                    <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={cois} onChange={setCois} min={0} max={50000} step={50} suffix="€" />
                     <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
@@ -468,27 +544,31 @@ export default function App(){
               <h2 className="text-lg font-medium">Step 3 – Investimenti</h2>
               <div className="space-y-3">
                 <Card>
-                  <h3 className="text-md font-medium mb-2">Rendimento</h3>
-                  <Grid>
-                    <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                    <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
-                  </Grid>
-                </Card>
-                <Card>
-                  <h3 className="text-md font-medium mb-2">Obiettivo</h3>
-                  <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                </Card>
-                <Card>
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
                     <Checkbox label="Investi capitale iniziale" checked={investInitial} onChange={setInvestInitial} />
-                    <Checkbox label="Investi COIS mensile" checked={investMonthly} onChange={setInvestMonthly} />
+                    <Checkbox label="Investi disponibilità mensile" checked={investMonthly} onChange={setInvestMonthly} />
                   </div>
                 </Card>
-                <Card>
-                  <h3 className="text-md font-medium mb-2">Indicatore</h3>
-                  <Field label="Stipendio netto annuale" description="Usato solo per ragionare sul guadagno dall'investimento" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                </Card>
+                {(investInitial || investMonthly) && (
+                  <>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Rendimento</h3>
+                      <Grid>
+                        <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
+                        <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                      </Grid>
+                    </Card>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Obiettivo</h3>
+                      <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                    </Card>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Indicatore</h3>
+                      <Field label="Stipendio netto annuale" description="Usato solo per ragionare sul guadagno dall'investimento" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
+                    </Card>
+                  </>
+                )}
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
