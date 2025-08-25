@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Calculator, TrendingUp, ArrowRight } from "lucide-react";
+import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards } from "lucide-react";
 
 // -------------------- Utils --------------------
 const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -156,24 +156,43 @@ function Popup({ message, onConfirm, onCancel }){
   );
 }
 
-function ConfigCard({ title, description, details = [], onSteps, onResults }){
+function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onResults }) {
   return (
     <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
-      <h3 className="text-md font-medium text-slate-800">{title}</h3>
+      {Icon ? (
+        <div className="flex items-center gap-2">
+          <Icon className="w-5 h-5 text-orange-600" />
+          <h3 className="text-md font-medium text-slate-800">{title}</h3>
+        </div>
+      ) : (
+        <h3 className="text-md font-medium text-slate-800">{title}</h3>
+      )}
       <p className="text-sm text-slate-600">{description}</p>
       {details.length > 0 && (
-        <ul className="text-xs text-slate-600 mt-1 space-y-1">
+        <div className="flex flex-wrap gap-1 mt-1">
           {details.map((d, i) => (
-            <li key={i}>{d}</li>
+            <span key={i} className="px-2 py-1 bg-white rounded-full text-xs text-slate-600">
+              {d}
+            </span>
           ))}
-        </ul>
+        </div>
       )}
       <div className="flex gap-2 justify-center mt-2">
         {onSteps && (
-          <button onClick={onSteps} className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm">Vedi step</button>
+          <button
+            onClick={onSteps}
+            className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm"
+          >
+            Vedi step
+          </button>
         )}
         {onResults && (
-          <button onClick={onResults} className="px-3 py-1 bg-orange-600 text-white rounded-xl text-sm">Risultati</button>
+          <button
+            onClick={onResults}
+            className="px-3 py-1 bg-orange-600 text-white rounded-xl text-sm"
+          >
+            Risultati
+          </button>
         )}
       </div>
     </div>
@@ -364,8 +383,7 @@ export default function App(){
   // Base
   const [price, setPrice] = useState(150000);
   const [downPct, setDownPct] = useState(0.15);
-  const [yearsA, setYearsA] = useState(10);
-  const [yearsB, setYearsB] = useState(30);
+  const [scenarioYears, setScenarioYears] = useState([10, 30]);
   const [initialCapital, setInitialCapital] = useState(price*(1-downPct));
 
   // Tassi
@@ -384,42 +402,118 @@ export default function App(){
   const [minGainPct, setMinGainPct] = useState(0.1);
 
   // Calcoli
-  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
-  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
-  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, tax, infl, initialCapital, cois, investInitial, investMonthly]);
-  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, tax, infl, initialCapital, cois, investInitial, investMonthly]);
-  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, initialCapital, cois, investInitial, investMonthly]);
-  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: cois, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, initialCapital, cois, investInitial, investMonthly]);
-  const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
-  const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
-  const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
-  const chartData = useMemo(()=>{
-    const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
-      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }).gainReal;
-      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }).gainReal;
-      rows.push({ r:+(r*100).toFixed(2), [labelA]: gA, [labelB]: gB });
-    }
-    return rows;
-  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, cois, investInitial, investMonthly, labelA, labelB]);
-  const yearlyData = useMemo(()=>{
-    const maxY=Math.max(yearsA, yearsB); const rows=[];
-    for(let y=1;y<=maxY;y++){
-      const row={ year:y };
-      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
-      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: cois, investInitial, investMonthly }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
+  const scenarioStats = useMemo(
+    () =>
+      scenarioYears.map((years) => {
+        const s = scenarioGain({
+          price,
+          downPct,
+          tan,
+          years,
+          grossReturn: gross,
+          taxRate: tax,
+          inflation: infl,
+          initialCapital,
+          monthlyExtra: cois,
+          investInitial,
+          investMonthly,
+        });
+        const be = breakEvenGross({
+          price,
+          downPct,
+          tan,
+          years,
+          taxRate: tax,
+          inflation: infl,
+          initialCapital,
+          monthlyExtra: cois,
+          investInitial,
+          investMonthly,
+        });
+        const payTime = payOffTime({
+          price,
+          downPct,
+          tan,
+          years,
+          grossReturn: gross,
+          taxRate: tax,
+          initialCapital,
+          monthlyExtra: cois,
+          investInitial,
+          investMonthly,
+        });
+        const label = `Scenario ${years} anni`;
+        return { years, s, be, payTime, label, labelN: `${label} nominale`, labelR: `${label} reale` };
+      }),
+    [scenarioYears, price, downPct, tan, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]
+  );
+
+  const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"]; 
+
+  const chartData = useMemo(() => {
+    const rows = [];
+    for (let r = 0.02; r <= 0.07 + 1e-9; r += 0.0025) {
+      const row = { r: +(r * 100).toFixed(2) };
+      scenarioYears.forEach((years) => {
+        const label = `Scenario ${years} anni`;
+        row[label] = scenarioGain({
+          price,
+          downPct,
+          tan,
+          years,
+          grossReturn: r,
+          taxRate: tax,
+          inflation: infl,
+          initialCapital,
+          monthlyExtra: cois,
+          investInitial,
+          investMonthly,
+        }).gainReal;
+      });
       rows.push(row);
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, cois, investInitial, investMonthly, labelAN, labelAR, labelBN, labelBR]);
+  }, [scenarioYears, price, downPct, tan, tax, infl, initialCapital, cois, investInitial, investMonthly]);
 
-  const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
-  const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
+  const yearlyData = useMemo(() => {
+    const maxY = Math.max(...scenarioYears);
+    const rows = [];
+    for (let y = 1; y <= maxY; y++) {
+      const row = { year: y };
+      scenarioYears.forEach((years) => {
+        if (y <= years) {
+          const g = scenarioGain({
+            price,
+            downPct,
+            tan,
+            years: y,
+            grossReturn: gross,
+            taxRate: tax,
+            inflation: infl,
+            initialCapital,
+            monthlyExtra: cois,
+            investInitial,
+            investMonthly,
+          });
+          const label = `Scenario ${years} anni`;
+          row[`${label} nominale`] = g.gainNominal;
+          row[`${label} reale`] = g.gainReal;
+        }
+      });
+      rows.push(row);
+    }
+    return rows;
+  }, [scenarioYears, price, downPct, tan, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
 
-  const targetPct = minGainPct>0 ? minGainPct : 0;
-  const diffPctA = sA.gainReal / sA.principal - targetPct;
-  const diffAmtA = sA.gainReal - sA.principal * targetPct;
-  const diffPctB = sB.gainReal / sB.principal - targetPct;
-  const diffAmtB = sB.gainReal - sB.principal * targetPct;
+  const better = scenarioStats.map(({ s }) =>
+    minGainPct > 0 ? s.gainReal >= s.principal * minGainPct : s.gainReal >= 0
+  );
+
+  const targetPct = minGainPct > 0 ? minGainPct : 0;
+  const diffs = scenarioStats.map(({ s }) => ({
+    diffPct: s.gainReal / s.principal - targetPct,
+    diffAmt: s.gainReal - s.principal * targetPct,
+  }));
 
     const titleColor = step >= 4 ? "text-white" : "text-slate-800";
     const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
@@ -427,9 +521,8 @@ export default function App(){
     const resetAll = () => {
       setPrice(150000);
       setDownPct(0.15);
-      setYearsA(10);
-      setYearsB(30);
-      setInitialCapital(150000*(1-0.15));
+      setScenarioYears([10, 30]);
+      setInitialCapital(150000 * (1 - 0.15));
       setTan(0.03);
       setInfl(0.02);
       setTax(0.26);
@@ -442,15 +535,35 @@ export default function App(){
     };
 
     const applyConfig = (cfg) => {
-      switch(cfg){
+      switch (cfg) {
         case 1:
-          setInitialCapital(0); setCois(0); setInvestInitial(false); setInvestMonthly(false); break;
+          setScenarioYears([15, 25]);
+          setInitialCapital(0);
+          setCois(0);
+          setInvestInitial(false);
+          setInvestMonthly(false);
+          break;
         case 2:
-          setInitialCapital(0); setCois(300); setInvestInitial(false); setInvestMonthly(false); break;
+          setScenarioYears([10, 20, 30]);
+          setInitialCapital(0);
+          setCois(300);
+          setInvestInitial(false);
+          setInvestMonthly(false);
+          break;
         case 3:
-          setInitialCapital(0); setCois(300); setInvestInitial(false); setInvestMonthly(true); break;
+          setScenarioYears([15, 25, 35]);
+          setInitialCapital(0);
+          setCois(300);
+          setInvestInitial(false);
+          setInvestMonthly(true);
+          break;
         case 4:
-          setInitialCapital(50000); setCois(0); setInvestInitial(true); setInvestMonthly(false); break;
+          setScenarioYears([20, 40]);
+          setInitialCapital(50000);
+          setCois(0);
+          setInvestInitial(true);
+          setInvestMonthly(false);
+          break;
         default:
           break;
       }
@@ -504,37 +617,76 @@ export default function App(){
               <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ConfigCard
-                  title="Solo mutuo"
-                  description="Vedi solo l'andamento del mutuo"
+                  icon={Home}
+                  title="Vuoi solo il mutuo?"
+                  description="Scopri l'andamento del debito senza investimenti. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Nessun investimento"]}
-                  onSteps={()=>{applyConfig(1); setStep(1);}}
-                  onResults={()=>{applyConfig(1); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                  onSteps={() => {
+                    applyConfig(1);
+                    setStep(1);
+                  }}
+                  onResults={() => {
+                    applyConfig(1);
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setStep(4);
+                    }, 2000);
+                  }}
                 />
                 <ConfigCard
-                  title="Mutuo con risparmi o rendita"
-                  description="Scopri quando chiudere in anticipo"
+                  icon={PiggyBank}
+                  title="Hai risparmi mensili da investire?"
+                  description="Valuta quando chiudere il mutuo investendo 300€ al mese. Durate 10-20-30 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
-                  onSteps={()=>{applyConfig(2); setStep(1);}}
-                  onResults={()=>{applyConfig(2); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                  onSteps={() => {
+                    applyConfig(2);
+                    setStep(1);
+                  }}
+                  onResults={() => {
+                    applyConfig(2);
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setStep(4);
+                    }, 2000);
+                  }}
                 />
                 <ConfigCard
-                  title="Mutuo con disponibilità investita"
-                  description="Valuta la chiusura anticipata investendo la disponibilità"
+                  icon={Wallet}
+                  title="Investi la tua disponibilità?"
+                  description="Simula la chiusura anticipata investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
-                  onSteps={()=>{applyConfig(3); setStep(1);}}
-                  onResults={()=>{applyConfig(3); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
+                  onSteps={() => {
+                    applyConfig(3);
+                    setStep(1);
+                  }}
+                  onResults={() => {
+                    applyConfig(3);
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setStep(4);
+                    }, 2000);
+                  }}
                 />
                 <ConfigCard
-                  title="Mutuo vs capitale già investito"
-                  description="Decidi se accendere un mutuo avendo capitale investito"
+                  icon={WalletCards}
+                  title="Hai già capitale investito?"
+                  description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
-                  onSteps={()=>{applyConfig(4); setStep(1);}}
-                  onResults={()=>{applyConfig(4); setLoading(true); setTimeout(()=>{setLoading(false); setStep(4);},2000);}}
-                />
-                <ConfigCard
-                  title="Personalizzato"
-                  description="Imposta i tuoi valori"
-                  onSteps={()=>{setStep(1);}}
+                  onSteps={() => {
+                    applyConfig(4);
+                    setStep(1);
+                  }}
+                  onResults={() => {
+                    applyConfig(4);
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setStep(4);
+                    }, 2000);
+                  }}
                 />
               </div>
             </motion.div>
@@ -554,10 +706,38 @@ export default function App(){
                 </Card>
                 <Card>
                   <h3 className="text-md font-medium mb-2">Scenari</h3>
-                  <Grid>
-                    <YearSelector label="Durata scenario A (anni)" description="Durata del primo confronto" value={yearsA} onChange={setYearsA} />
-                    <YearSelector label="Durata scenario B (anni)" description="Durata del secondo confronto" value={yearsB} onChange={setYearsB} />
-                  </Grid>
+                  <div className="flex flex-col gap-3">
+                    {scenarioYears.map((y, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <YearSelector
+                          label={`Durata scenario ${i + 1} (anni)`}
+                          description={`Durata del confronto ${i + 1}`}
+                          value={y}
+                          onChange={(v) => {
+                            const arr = [...scenarioYears];
+                            arr[i] = v;
+                            setScenarioYears(arr);
+                          }}
+                        />
+                        {scenarioYears.length > 1 && (
+                          <button
+                            type="button"
+                            className="text-rose-600 text-sm"
+                            onClick={() => setScenarioYears(scenarioYears.filter((_, idx) => idx !== i))}
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setScenarioYears([...scenarioYears, 20])}
+                      className="self-start px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm"
+                    >
+                      Aggiungi scenario
+                    </button>
+                  </div>
                 </Card>
               </div>
               <div className="flex justify-between">
@@ -641,171 +821,129 @@ export default function App(){
                   <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
                 )}
                 {hasInvestment ? (
-                <>
-                  <Card>
-                <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <KPICard title="Rata" value={fmt2(sA.payment)} subtitle="€/mese"/>
-                  <KPICard title="Break-even lordo" value={pct(beA)} subtitle="guadagno reale = 0"/>
-                </div>
-                <div className="mt-4">
-                  <MiniTable
-                    title="Dettagli"
-                    sections={[
-                      { title: "Investimento", rows: [["Invest. finale nominale", fmt(sA.fvNominal)], ["Invest. finale reale", fmt(sA.fvReal)]] },
-                      { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
-                      { title: "Guadagno", rows: [["Guadagno nominale", fmt(sA.gainNominal)], ["Guadagno reale", fmt(sA.gainReal)]] },
-                      { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(sA.gainReal/salary) : "–"], ["% prezzo casa", pct(sA.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"]] },
-                      { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
-                    ]}
-                  />
-                  <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
-                </div>
-              </Card>
+                  <>
+                    {scenarioStats.map(({ years, s, be, payTime, label }, idx) => (
+                      <Card key={idx}>
+                        <h3 className="text-md font-medium mb-2">Mutuo {years} anni</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <KPICard title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
+                          <KPICard title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
+                        </div>
+                        <div className="mt-4">
+                          <MiniTable
+                            title="Dettagli"
+                            sections={[
+                              { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
+                              { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
+                              { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] },
+                              { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", pct(s.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                              { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
+                            ]}
+                          />
+                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                        </div>
+                      </Card>
+                    ))}
 
-              <Card>
-                <h3 className="text-md font-medium mb-2">Mutuo {yearsB} anni</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <KPICard title="Rata" value={fmt2(sB.payment)} subtitle="€/mese"/>
-                  <KPICard title="Break-even lordo" value={pct(beB)} subtitle="guadagno reale = 0"/>
-                </div>
-                <div className="mt-4">
-                  <MiniTable
-                    title="Dettagli"
-                    sections={[
-                      { title: "Investimento", rows: [["Invest. finale nominale", fmt(sB.fvNominal)], ["Invest. finale reale", fmt(sB.fvReal)]] },
-                      { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
-                      { title: "Guadagno", rows: [["Guadagno nominale", fmt(sB.gainNominal)], ["Guadagno reale", fmt(sB.gainReal)]] },
-                      { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(sB.gainReal/salary) : "–"], ["% prezzo casa", pct(sB.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"]] },
-                      { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
-                    ]}
-                  />
-                  <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
-                </div>
-              </Card>
+                    <Card>
+                      <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="w-5 h-5" />
+                        <h2 className="text-lg font-medium">Guadagno reale netto vs rendimento lordo</h2>
+                      </div>
+                      <div className="h-72">
+                        <ResponsiveContainer>
+                          <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                            <XAxis dataKey="r" tickFormatter={(v) => `${v}%`} />
+                            <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                            <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Rendimento lordo ${l}%`} />
+                            <Legend />
+                            <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                            {scenarioStats.map(({ label }, idx) => (
+                              <Line key={label} type="monotone" dataKey={label} stroke={colors[idx % colors.length]} dot={false} strokeWidth={2} />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
 
-              <Card>
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-5 h-5"/>
-                  <h2 className="text-lg font-medium">Guadagno reale netto vs rendimento lordo</h2>
-                </div>
-                <div className="h-72">
-                  <ResponsiveContainer>
-                    <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                      <XAxis dataKey="r" tickFormatter={(v)=>`${v}%`} />
-                      <YAxis tickFormatter={(v)=>v.toLocaleString("it-IT")} />
-                      <Tooltip formatter={(v)=>fmt(v)} labelFormatter={(l)=>`Rendimento lordo ${l}%`} />
-                      <Legend />
-                      <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                      <Line type="monotone" dataKey={labelA} stroke="#2563eb" dot={false} strokeWidth={2} />
-                      <Line type="monotone" dataKey={labelB} stroke="#f97316" dot={false} strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
+                    <Card>
+                      <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="w-5 h-5" />
+                        <h2 className="text-lg font-medium">Guadagno nominale e reale nel tempo</h2>
+                      </div>
+                      <div className="h-72">
+                        <ResponsiveContainer>
+                          <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                            <XAxis dataKey="year" />
+                            <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                            <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
+                            <Legend />
+                            <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                            {scenarioStats.map(({ label }, idx) => (
+                              <React.Fragment key={label}>
+                                <Line type="monotone" dataKey={`${label} nominale`} stroke={colors[idx % colors.length]} strokeDasharray="5 5" dot={false} />
+                                <Line type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
+                              </React.Fragment>
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
 
-              <Card>
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="w-5 h-5"/>
-                  <h2 className="text-lg font-medium">Guadagno nominale e reale nel tempo</h2>
-                </div>
-                <div className="h-72">
-                  <ResponsiveContainer>
-                    <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                      <XAxis dataKey="year" />
-                      <YAxis yAxisId="A" tickFormatter={(v)=>v.toLocaleString("it-IT")} />
-                      <YAxis yAxisId="B" orientation="right" tickFormatter={(v)=>v.toLocaleString("it-IT")} />
-                      <Tooltip formatter={(v)=>fmt(v)} labelFormatter={(l)=>`Anno ${l}`} />
-                      <Legend />
-                      <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                      <Line yAxisId="A" type="monotone" dataKey={labelAN} stroke="#2563eb" strokeDasharray="5 5" dot={false} />
-                      <Line yAxisId="A" type="monotone" dataKey={labelAR} stroke="#2563eb" strokeWidth={2} dot={false} />
-                      <Line yAxisId="B" type="monotone" dataKey={labelBN} stroke="#f97316" strokeDasharray="5 5" dot={false} />
-                      <Line yAxisId="B" type="monotone" dataKey={labelBR} stroke="#f97316" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              <Card>
-                <h2 className="text-lg font-medium mb-2">Conclusione</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-slate-200 p-4 bg-white">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold">{labelA}</div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${betterA ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {betterA ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
-                      </span>
-                    </div>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>% stipendio annuo: <b>{salary>0 ? pct(sA.gainReal/salary) : "–"}</b></li>
-                      <li>% prezzo casa: <b>{pct(sA.gainReal/price)}</b></li>
-                      <li>Mesi di lavoro equivalenti: <b>{salary>0 ? (sA.gainReal/(salary/12)).toFixed(1) : "–"}</b></li>
-                      <li>Break-even lordo: <b>{pct(beA)}</b></li>
-                      <li>Guadagno reale stimato: <b>{fmt(sA.gainReal)}</b></li>
-                      <li>Interessi reali (PV): <b>{fmt(sA.interestReal)}</b></li>
-                      <li>{minGainPct>0 ? <>Scostamento dalla % attesa: <b>{pct(diffPctA)}</b> ({fmt(diffAmtA)})</> : <>Scostamento dallo smenarci: <b>{pct(diffPctA)}</b> ({fmt(diffAmtA)})</>}</li>
-                    </ul>
-                    <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minGainPct>0 && ` e il guadagno supera il ${pct(minGainPct)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 p-4 bg-white">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold">{labelB}</div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${betterB ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {betterB ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
-                      </span>
-                    </div>
-                    <ul className="text-sm text-slate-600 space-y-1">
-                      <li>% stipendio annuo: <b>{salary>0 ? pct(sB.gainReal/salary) : "–"}</b></li>
-                      <li>% prezzo casa: <b>{pct(sB.gainReal/price)}</b></li>
-                      <li>Mesi di lavoro equivalenti: <b>{salary>0 ? (sB.gainReal/(salary/12)).toFixed(1) : "–"}</b></li>
-                      <li>Break-even lordo: <b>{pct(beB)}</b></li>
-                      <li>Guadagno reale stimato: <b>{fmt(sB.gainReal)}</b></li>
-                      <li>Interessi reali (PV): <b>{fmt(sB.interestReal)}</b></li>
-                      <li>{minGainPct>0 ? <>Scostamento dalla % attesa: <b>{pct(diffPctB)}</b> ({fmt(diffAmtB)})</> : <>Scostamento dallo smenarci: <b>{pct(diffPctB)}</b> ({fmt(diffAmtB)})</>}</li>
-                    </ul>
-                    <p className="text-xs text-slate-500 mt-2">Con durate più lunghe l'interesse composto aiuta: sopra il break-even i vantaggi crescono molto più che nei periodi brevi.</p>
-                  </div>
-                </div>
-                </Card>
-                </>
-              ) : (
-                <>
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Mutuo {yearsA} anni</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <KPICard title="Rata" value={fmt2(sA.payment)} subtitle="€/mese"/>
-                    </div>
-                    <div className="mt-4">
-                      <MiniTable
-                        title="Dettagli"
-                        sections={[
-                          { title: "Interessi", rows: [["Interessi nominali", fmt(sA.interestNominal)], ["Interessi reali (PV)", fmt(sA.interestReal)]] },
-                          { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeA) ? `${payTimeA.toFixed(1)} anni` : `> ${yearsA} anni`]] }
-                        ]}
-                      />
-                      <AmortizationTable principal={sA.principal} annualRate={tan} years={yearsA} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
-                    </div>
-                  </Card>
-
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Mutuo {yearsB} anni</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <KPICard title="Rata" value={fmt2(sB.payment)} subtitle="€/mese"/>
-                    </div>
-                    <div className="mt-4">
-                      <MiniTable
-                        title="Dettagli"
-                        sections={[
-                          { title: "Interessi", rows: [["Interessi nominali", fmt(sB.interestNominal)], ["Interessi reali (PV)", fmt(sB.interestReal)]] },
-                          { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTimeB) ? `${payTimeB.toFixed(1)} anni` : `> ${yearsB} anni`]] }
-                        ]}
-                      />
-                      <AmortizationTable principal={sB.principal} annualRate={tan} years={yearsB} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
-                    </div>
-                  </Card>
-                </>
-              )}
+                    <Card>
+                      <h2 className="text-lg font-medium mb-2">Conclusione</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {scenarioStats.map(({ label, s, be }, idx) => (
+                          <div key={label} className="rounded-xl border border-slate-200 p-4 bg-white">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="font-semibold">{label}</div>
+                              <span className={`px-2 py-1 text-xs rounded-full ${better[idx] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                {better[idx] ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
+                              </span>
+                            </div>
+                            <ul className="text-sm text-slate-600 space-y-1">
+                              <li>% stipendio annuo: <b>{salary > 0 ? pct(s.gainReal / salary) : "–"}</b></li>
+                              <li>% prezzo casa: <b>{pct(s.gainReal / price)}</b></li>
+                              <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (s.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
+                              <li>Break-even lordo: <b>{pct(be)}</b></li>
+                              <li>Guadagno reale stimato: <b>{fmt(s.gainReal)}</b></li>
+                              <li>Interessi reali (PV): <b>{fmt(s.interestReal)}</b></li>
+                              <li>
+                                {minGainPct > 0 ? (
+                                  <>Scostamento dalla % attesa: <b>{pct(diffs[idx].diffPct)}</b> ({fmt(diffs[idx].diffAmt)})</>
+                                ) : (
+                                  <>Scostamento dallo smenarci: <b>{pct(diffs[idx].diffPct)}</b> ({fmt(diffs[idx].diffAmt)})</>
+                                )}
+                              </li>
+                            </ul>
+                            <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minGainPct>0 && ` e il guadagno supera il ${pct(minGainPct)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </>
+                ) : (
+                  <>
+                    {scenarioStats.map(({ years, s, payTime }, idx) => (
+                      <Card key={idx}>
+                        <h3 className="text-md font-medium mb-2">Mutuo {years} anni</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <KPICard title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
+                        </div>
+                        <div className="mt-4">
+                          <MiniTable
+                            title="Dettagli"
+                            sections={[
+                              { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
+                              { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
+                            ]}
+                          />
+                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                        </div>
+                      </Card>
+                    ))}
+                  </>
+                )}
               <div className="flex justify-end">
                 <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
               </div>
