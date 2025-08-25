@@ -8,13 +8,18 @@ import MutuoInvestimentoGuide from './MutuoInvestimentoGuide.jsx'
 import InvestimentoGuide from './InvestimentoGuide.jsx'
 import './index.css'
 
-const router = createBrowserRouter([
-  { path: '/', element: <App /> },
-  { path: '/mutuo', element: <MutuoGuide /> },
-  { path: '/mutuo-risparmi-chiusura', element: <MutuoRisparmiChiusuraGuide /> },
-  { path: '/mutuo-investimento', element: <MutuoInvestimentoGuide /> },
-  { path: '/investimento', element: <InvestimentoGuide /> },
-])
+const router = createBrowserRouter(
+  [
+    { path: '/', element: <App /> },
+    { path: '/mutuo', element: <MutuoGuide /> },
+    { path: '/mutuo-risparmi-chiusura', element: <MutuoRisparmiChiusuraGuide /> },
+    { path: '/mutuo-investimento', element: <MutuoInvestimentoGuide /> },
+    { path: '/investimento', element: <InvestimentoGuide /> },
+  ],
+  {
+    basename: import.meta.env.BASE_URL,
+  }
+)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
