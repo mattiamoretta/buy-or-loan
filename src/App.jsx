@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards } from "lucide-react";
 
-import { Link } from "react-router-dom";
-import MutuoVsInvestimento from "./MutuoVsInvestimento.jsx";
+// Router removed; all content is on a single page
 
 // -------------------- Utils --------------------
 const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -56,33 +55,6 @@ function mortgageBalance({ principal, annualRate, years, afterYears }){
   const r = annualRate/12; const t = Math.round(afterYears*12);
   const bal = principal*Math.pow(1+r, t) - payment*((Math.pow(1+r, t)-1)/r);
   return Math.max(0, bal);
-}
-
-function amortizationSchedule({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
-  const payment = pmt(principal, annualRate, years);
-  const r = annualRate / 12;
-  const rm = grossReturn * (1 - taxRate) / 12;
-  const n = Math.round(years * 12);
-  let balance = principal;
-  let paidPrincipal = 0;
-  let v = investInitial ? initial : 0;
-  let saved = investInitial ? 0 : initial;
-  let payoffMonth = null;
-  const rows = [];
-  for (let m = 1; m <= n; m++) {
-    const interest = balance * r;
-    const capital = payment - interest;
-    balance = Math.max(0, balance - capital);
-    paidPrincipal += capital;
-
-    v = v * (1 + rm);
-    if (investMonthly) v += monthly; else saved += monthly;
-    const available = v + saved;
-    if (payoffMonth === null && available >= balance) payoffMonth = m;
-
-    rows.push({ month: m, interest, capital, balance, paidPrincipal, available });
-  }
-  return { rows, payoffMonth };
 }
 
 function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
@@ -201,16 +173,6 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
     </div>
   );
 }
-  function GuideCard({ to, title, description }) {
-    return (
-      <Link to={to} className="block p-5 bg-white rounded-2xl shadow border border-slate-200 hover:shadow-md transition">
-        <h3 className="text-md font-medium mb-1">{title}</h3>
-        <p className="text-sm text-slate-600">{description}</p>
-      </Link>
-    );
-  }
-
-
 function YearSelector({ label, value, onChange, description }){
   const presets = [10, 20, 30];
   const [custom, setCustom] = useState(!presets.includes(value));
@@ -298,42 +260,6 @@ function MiniTable({ title, sections }){
   );
 }
 
-function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
-  const { rows, payoffMonth } = useMemo(() => amortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
-  const showSavings = initial > 0 || monthly > 0;
-  return (
-    <details className="mt-4">
-      <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
-      <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
-        <table className="min-w-full text-xs tabular-nums">
-          <thead className="bg-slate-100 sticky top-0 z-10">
-            <tr>
-              <th className="px-2 py-1 text-left">Mese</th>
-              <th className="px-2 py-1 text-right">Interessi</th>
-              <th className="px-2 py-1 text-right">Capitale</th>
-              <th className="px-2 py-1 text-right">Residuo</th>
-              <th className="px-2 py-1 text-right">Capitale tot.</th>
-              {showSavings && <th className="px-2 py-1 text-right">Disp. potenziale</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(r => (
-              <tr key={r.month} className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}>
-                <td className="px-2 py-1 font-mono text-right">{r.month}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.interest)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.capital)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.balance)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.paidPrincipal)}</td>
-                {showSavings && <td className="px-2 py-1 font-mono text-right">{fmt2(r.available)}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  );
-}
-
 function Stepper({ step }) {
   const labels = [
     "Mutuo",
@@ -382,6 +308,13 @@ export default function App(){
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState(null);
+  const [tab, setTab] = useState('mutuo');
+  const tabs = [
+    { id: 'mutuo', label: 'Mutuo' },
+    { id: 'investimento', label: 'Investimento' },
+    { id: 'mutuo-investimento', label: 'Mutuo + Investimento' },
+    { id: 'mutuo-risparmi', label: 'Mutuo + Risparmi' },
+  ];
 
   const backgrounds = [
     'from-orange-50 via-amber-50 to-yellow-50',
@@ -548,33 +481,33 @@ export default function App(){
 
     const applyConfig = (cfg) => {
       switch (cfg) {
-        case 1:
-          setScenarioYears([15, 25]);
+        case 'mutuo':
+          setInvestInitial(false);
+          setInvestMonthly(false);
           setInitialCapital(0);
           setCois(0);
-          setInvestInitial(false);
-          setInvestMonthly(false);
           break;
-        case 2:
-          setScenarioYears([10, 20, 30]);
-          setInitialCapital(0);
-          setCois(300);
-          setInvestInitial(false);
-          setInvestMonthly(false);
-          break;
-        case 3:
-          setScenarioYears([15, 25, 35]);
-          setInitialCapital(0);
-          setCois(300);
-          setInvestInitial(false);
+        case 'investimento':
+          setPrice(0);
+          setDownPct(0);
+          setTan(0);
+          setScenarioYears([10]);
+          setInitialCapital(10000);
+          setInvestInitial(true);
           setInvestMonthly(true);
+          setCois(200);
           break;
-        case 4:
-          setScenarioYears([20, 40]);
+        case 'mutuo-investimento':
+          setInvestInitial(true);
+          setInvestMonthly(true);
           setInitialCapital(50000);
-          setCois(0);
+          setCois(300);
+          break;
+        case 'mutuo-risparmi':
           setInvestInitial(true);
           setInvestMonthly(false);
+          setInitialCapital(50000);
+          setCois(0);
           break;
         default:
           break;
@@ -622,22 +555,54 @@ export default function App(){
           )}
 
           {!loading && step===0 && (
-            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-12">
-              <section className="text-center py-20">
-                <h1 className="text-4xl font-bold mb-4">Buy or Loan</h1>
-                <p className="text-lg mb-6">Confronta mutuo e investimento per prendere la decisione migliore.</p>
-                <a href="#guide" className="px-6 py-3 bg-orange-600 text-white rounded-xl shadow">Scopri di più</a>
-              </section>
-              <section id="guide" className="space-y-6">
-                <h2 className="text-2xl font-semibold text-center">Guide</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <GuideCard to="/mutuo" title="Mutuo" description="Concetti base del mutuo." />
-                  <GuideCard to="/mutuo-risparmi-chiusura" title="Mutuo e risparmi" description="Usa i risparmi per chiudere il mutuo." />
-                  <GuideCard to="/mutuo-investimento" title="Mutuo e investimento" description="Combina mutuo e investimento." />
-                  <GuideCard to="/investimento" title="Investimento" description="Strategie di investimento." />
-                </div>
-              </section>
-              <MutuoVsInvestimento />
+            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+              <div className="flex justify-center gap-2">
+                {tabs.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`px-3 py-1 rounded-xl text-sm ${tab === t.id ? 'bg-orange-600 text-white' : 'bg-white border border-orange-600 text-orange-600'}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {tab === 'mutuo' && (
+                <ConfigCard
+                  icon={Home}
+                  title="Mutuo"
+                  description="Simula un mutuo di base."
+                  onSteps={() => { resetAll(); applyConfig('mutuo'); setStep(1); }}
+                  onResults={() => { resetAll(); applyConfig('mutuo'); setStep(4); }}
+                />
+              )}
+              {tab === 'investimento' && (
+                <ConfigCard
+                  icon={PiggyBank}
+                  title="Investimento"
+                  description="Analizza un piano di investimento."
+                  onSteps={() => { resetAll(); applyConfig('investimento'); setStep(2); }}
+                  onResults={() => { resetAll(); applyConfig('investimento'); setStep(4); }}
+                />
+              )}
+              {tab === 'mutuo-investimento' && (
+                <ConfigCard
+                  icon={Wallet}
+                  title="Mutuo + Investimento"
+                  description="Combina mutuo e investimento."
+                  onSteps={() => { resetAll(); applyConfig('mutuo-investimento'); setStep(1); }}
+                  onResults={() => { resetAll(); applyConfig('mutuo-investimento'); setStep(4); }}
+                />
+              )}
+              {tab === 'mutuo-risparmi' && (
+                <ConfigCard
+                  icon={WalletCards}
+                  title="Mutuo + Risparmi"
+                  description="Usa i risparmi per chiudere il mutuo."
+                  onSteps={() => { resetAll(); applyConfig('mutuo-risparmi'); setStep(1); }}
+                  onResults={() => { resetAll(); applyConfig('mutuo-risparmi'); setStep(4); }}
+                />
+              )}
             </motion.div>
           )}
 
@@ -789,7 +754,6 @@ export default function App(){
                               { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
                             ]}
                           />
-                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                         </div>
                       </Card>
                     ))}
@@ -887,7 +851,6 @@ export default function App(){
                               { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
                             ]}
                           />
-                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                         </div>
                       </Card>
                     ))}
