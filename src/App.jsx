@@ -11,34 +11,36 @@ const pct = (n) => `${(n * 100).toFixed(2)}%`;
 function pmt(principal, annualRate, years){
   const r = annualRate/12; const n = years*12; return (principal*r)/(1-Math.pow(1+r,-n));
 }
-function investFV({ initial, monthly, grossReturn, taxRate, years, reinvest=true }){
-  const rNet = (grossReturn||0)*(1-taxRate); const rm = rNet/12; let v = initial; const months = Math.round(years*12);
-  if(reinvest){
-    for(let m=1;m<=months;m++) v = v*(1+rm) + (monthly||0);
-    return v;
-  } else {
-    for(let m=1;m<=months;m++) v = v*(1+rm);
-    return v + (monthly||0)*months;
+function investFV({ initial, monthly, grossReturn, taxRate, years, investInitial=true, investMonthly=true }){
+  const rNet = (grossReturn||0)*(1-taxRate);
+  const rm = rNet/12;
+  const months = Math.round(years*12);
+  let v = investInitial ? initial : 0;
+  let saved = investInitial ? 0 : initial;
+  for(let m=1;m<=months;m++){
+    v = v*(1+rm);
+    if(investMonthly) v += (monthly||0); else saved += (monthly||0);
   }
+  return v + saved;
 }
 function mortgageCosts({ principal, annualRate, years, inflation }){
   const n = years*12; const im = inflation/12; const payment = pmt(principal, annualRate, years); const totalPaid = payment*n; const interestNominal = totalPaid - principal;
   let pvPayments = 0; for(let m=1;m<=n;m++) pvPayments += payment/Math.pow(1+im,m);
   const interestReal = pvPayments - principal; return { payment, totalPaid, interestNominal, interestReal };
 }
-function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, initialCapital, monthlyExtra=0, reinvest=true }){
+function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
   const principal = price*(1-downPct);
-  const fvNominal = investFV({ initial: initialCapital, monthly: monthlyExtra, grossReturn, taxRate, years, reinvest });
+  const fvNominal = investFV({ initial: initialCapital, monthly: monthlyExtra, grossReturn, taxRate, years, investInitial, investMonthly });
   const { interestNominal, interestReal, payment } = mortgageCosts({ principal, annualRate: tan, years, inflation });
   const fvReal = fvNominal/Math.pow(1+inflation, years);
   const gainNominal = fvNominal - (principal + interestNominal);
   const gainReal = fvReal - (principal + interestReal);
   return { principal, initialCapital, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
 }
-function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initialCapital, monthlyExtra=0, reinvest=true }){
+function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
   let lo=0, hi=0.2; // 0..20% lordo
   for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, initialCapital, monthlyExtra, reinvest }).gainReal;
+    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, initialCapital, monthlyExtra, investInitial, investMonthly }).gainReal;
     if(g>=0) hi=mid; else lo=mid;
   }
   return (lo+hi)/2;
@@ -52,12 +54,12 @@ function mortgageBalance({ principal, annualRate, years, afterYears }){
   return Math.max(0, bal);
 }
 
-function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, reinvest=true }){
+function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
   const principal = price*(1-downPct);
   const initialInvest = initialCapital;
 
   function totalSaved(y){
-    return investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, reinvest });
+    return investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, investInitial, investMonthly });
   }
 
   function balance(y){
@@ -202,41 +204,42 @@ export default function App(){
   const [gross, setGross] = useState(0.05);
 
   // Contributi e investimenti
-  const [monthlyExtra, setMonthlyExtra] = useState(0);
-  const [reinvest, setReinvest] = useState(true);
+  const [monthlyAvail, setMonthlyAvail] = useState(0);
+  const [investInitial, setInvestInitial] = useState(true);
+  const [investMonthly, setInvestMonthly] = useState(true);
 
   // Entrate
   const [salary, setSalary] = useState(30000);
   const [minGainPct, setMinGainPct] = useState(0.1);
 
   // Calcoli
-  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, monthlyExtra, reinvest]);
-  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, monthlyExtra, reinvest]);
-  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, tax, infl, initialCapital, monthlyExtra, reinvest]);
-  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, tax, infl, initialCapital, monthlyExtra, reinvest]);
-  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsA, gross, tax, initialCapital, monthlyExtra, reinvest]);
-  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra, reinvest }), [price, downPct, tan, yearsB, gross, tax, initialCapital, monthlyExtra, reinvest]);
+  const sA = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const sB = useMemo(()=>scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const beA = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsA, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const beB = useMemo(()=>breakEvenGross({ price, downPct, tan, years: yearsB, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const payTimeA = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsA, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsA, gross, tax, initialCapital, monthlyAvail, investInitial, investMonthly]);
+  const payTimeB = useMemo(()=>payOffTime({ price, downPct, tan, years: yearsB, grossReturn: gross, taxRate: tax, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }), [price, downPct, tan, yearsB, gross, tax, initialCapital, monthlyAvail, investInitial, investMonthly]);
   const labelA = `Scenario ${yearsA} anni`; const labelB = `Scenario ${yearsB} anni`;
   const labelAN = `${labelA} nominale`; const labelAR = `${labelA} reale`;
   const labelBN = `${labelB} nominale`; const labelBR = `${labelB} reale`;
   const chartData = useMemo(()=>{
     const rows=[]; for(let r=0.02;r<=0.07+1e-9;r+=0.0025){
-      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }).gainReal;
-      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra, reinvest }).gainReal;
+      const gA = scenarioGain({ price, downPct, tan, years: yearsA, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }).gainReal;
+      const gB = scenarioGain({ price, downPct, tan, years: yearsB, grossReturn: r, taxRate: tax, inflation: infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }).gainReal;
       rows.push({ r:+(r*100).toFixed(2), [labelA]: gA, [labelB]: gB });
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, monthlyExtra, reinvest, labelA, labelB]);
+  }, [price, downPct, tan, yearsA, yearsB, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly, labelA, labelB]);
   const yearlyData = useMemo(()=>{
     const maxY=Math.max(yearsA, yearsB); const rows=[];
     for(let y=1;y<=maxY;y++){
       const row={ year:y };
-      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra, reinvest }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
-      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra, reinvest }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
+      if(y<=yearsA){ const gA=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }); row[labelAN]=gA.gainNominal; row[labelAR]=gA.gainReal; }
+      if(y<=yearsB){ const gB=scenarioGain({ price, downPct, tan, years:y, grossReturn:gross, taxRate:tax, inflation:infl, initialCapital, monthlyExtra: monthlyAvail, investInitial, investMonthly }); row[labelBN]=gB.gainNominal; row[labelBR]=gB.gainReal; }
       rows.push(row);
     }
     return rows;
-  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, monthlyExtra, reinvest, labelAN, labelAR, labelBN, labelBR]);
+  }, [price, downPct, tan, yearsA, yearsB, gross, tax, infl, initialCapital, monthlyAvail, investInitial, investMonthly, labelAN, labelAR, labelBN, labelBR]);
 
   const betterA = minGainPct>0 ? sA.gainReal >= sA.principal*minGainPct : sA.gainReal >= 0;
   const betterB = minGainPct>0 ? sB.gainReal >= sB.principal*minGainPct : sB.gainReal >= 0;
@@ -248,10 +251,10 @@ export default function App(){
   const diffAmtB = sB.gainReal - sB.principal * targetPct;
 
     const titleColor = step >= 4 ? "text-white" : "text-slate-800";
-    const hasInvestment = initialCapital > 0 || reinvest;
+    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyAvail > 0);
 
     const handleInvestNext = () => {
-      if(initialCapital <= 0 && !reinvest){
+      if((!investInitial || initialCapital<=0) && (!investMonthly || monthlyAvail<=0)){
         alert("Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.");
       }
       setLoading(true);
@@ -321,7 +324,6 @@ export default function App(){
               <h2 className="text-lg font-medium">Step 2 – Entrate</h2>
               <div className="space-y-3">
                 <Field label="Stipendio netto annuale" description="Quanto guadagni in un anno" value={salary} onChange={setSalary} min={0} max={1000000} step={1000} suffix="€" />
-                <Field label="Contributo mensile oppure rendimento derivato dal mutuo (€)" description="Versamento aggiuntivo ogni mese" value={monthlyExtra} onChange={setMonthlyExtra} min={0} max={50000} step={50} suffix="€" />
                 <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
               </div>
               <div className="flex justify-between">
@@ -350,8 +352,12 @@ export default function App(){
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
                   <Grid>
                     <Field label="Capitale iniziale (€)" description="Somma che investi subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                    <Field label="Disponibilità mensile (€)" description="Somma disponibile ogni mese" value={monthlyAvail} onChange={setMonthlyAvail} min={0} max={50000} step={50} suffix="€" />
                   </Grid>
-                  <Checkbox label="Reinvesti mensilmente" description="Riutilizza gli interessi maturati" checked={reinvest} onChange={setReinvest} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 mt-3">
+                    <Checkbox label="Investi capitale iniziale" checked={investInitial} onChange={setInvestInitial} />
+                    <Checkbox label="Investi disponibilità mensile" checked={investMonthly} onChange={setInvestMonthly} />
+                  </div>
                 </Card>
               </div>
               <div className="flex justify-between">
