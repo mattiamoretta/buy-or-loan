@@ -291,7 +291,7 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   const showSavings = initial > 0 || monthly > 0;
   return (
     <details className="mt-4">
-      <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento rate</summary>
+      <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento</summary>
       <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
         <table className="min-w-full text-xs tabular-nums">
           <thead className="bg-slate-100 sticky top-0 z-10">
@@ -325,6 +325,7 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
 function Stepper({ step }) {
   const labels = [
     "Mutuo",
+    "Scenari",
     "Entrate",
     "Investimenti",
     "Risultati",
@@ -383,7 +384,7 @@ export default function App(){
   // Base
   const [price, setPrice] = useState(150000);
   const [downPct, setDownPct] = useState(0.15);
-  const [scenarioYears, setScenarioYears] = useState([10, 30]);
+  const [scenarioYears, setScenarioYears] = useState([20]);
   const [initialCapital, setInitialCapital] = useState(price*(1-downPct));
 
   // Tassi
@@ -511,17 +512,17 @@ export default function App(){
 
   const targetPct = minGainPct > 0 ? minGainPct : 0;
   const diffs = scenarioStats.map(({ s }) => ({
-    diffPct: s.gainReal / s.principal - targetPct,
+    diffPct: s.principal > 0 ? s.gainReal / s.principal - targetPct : 0,
     diffAmt: s.gainReal - s.principal * targetPct,
   }));
 
-    const titleColor = step >= 4 ? "text-white" : "text-slate-800";
+    const titleColor = step >= 5 ? "text-white" : "text-slate-800";
     const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
 
     const resetAll = () => {
       setPrice(150000);
       setDownPct(0.15);
-      setScenarioYears([10, 30]);
+      setScenarioYears([20]);
       setInitialCapital(150000 * (1 - 0.15));
       setTan(0.03);
       setInfl(0.02);
@@ -564,6 +565,16 @@ export default function App(){
           setInvestInitial(true);
           setInvestMonthly(false);
           break;
+        case 5:
+          setPrice(0);
+          setDownPct(0);
+          setTan(0);
+          setScenarioYears([20]);
+          setInitialCapital(10000);
+          setCois(300);
+          setInvestInitial(true);
+          setInvestMonthly(true);
+          break;
         default:
           break;
       }
@@ -572,7 +583,7 @@ export default function App(){
     const handleInvestNext = () => {
       const proceed = () => {
         setLoading(true);
-        setTimeout(()=>{setLoading(false); setStep(4);},2000);
+        setTimeout(()=>{setLoading(false); setStep(5);},2000);
       };
       if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
         setPopup({
@@ -589,7 +600,7 @@ export default function App(){
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
       {popup && <Popup {...popup} />}
       <div className="max-w-5xl mx-auto p-6">
-        <header className="flex items-center gap-3 mb-6">
+        <header className="flex items-center justify-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
           <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard 🚀</h1>
         </header>
@@ -603,8 +614,9 @@ export default function App(){
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-white flex items-center justify-center"
+              className="fixed inset-0 bg-white flex flex-col items-center justify-center gap-4"
             >
+              <h1 className="text-2xl font-semibold text-orange-600">The wise investor's wizard 🚀</h1>
               <div className="h-16 w-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
             </motion.div>
           )}
@@ -630,7 +642,25 @@ export default function App(){
                     setLoading(true);
                     setTimeout(() => {
                       setLoading(false);
-                      setStep(4);
+                      setStep(5);
+                    }, 2000);
+                  }}
+                />
+                <ConfigCard
+                  icon={TrendingUp}
+                  title="Stai valutando un investimento?"
+                  description="Simula un investimento senza mutuo: €10k iniziali e 300€/mese per 20 anni."
+                  details={["Capitale iniziale €10k", "Versamento 300€/mese"]}
+                  onSteps={() => {
+                    applyConfig(5);
+                    setStep(2);
+                  }}
+                  onResults={() => {
+                    applyConfig(5);
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      setStep(5);
                     }, 2000);
                   }}
                 />
@@ -648,7 +678,7 @@ export default function App(){
                     setLoading(true);
                     setTimeout(() => {
                       setLoading(false);
-                      setStep(4);
+                      setStep(5);
                     }, 2000);
                   }}
                 />
@@ -666,7 +696,7 @@ export default function App(){
                     setLoading(true);
                     setTimeout(() => {
                       setLoading(false);
-                      setStep(4);
+                      setStep(5);
                     }, 2000);
                   }}
                 />
@@ -684,7 +714,7 @@ export default function App(){
                     setLoading(true);
                     setTimeout(() => {
                       setLoading(false);
-                      setStep(4);
+                      setStep(5);
                     }, 2000);
                   }}
                 />
@@ -699,13 +729,29 @@ export default function App(){
                 <Card>
                   <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
                   <Grid>
-                    <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={50000} max={2000000} step={1000} suffix="€" />
+                    <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
                     <Field label="Anticipo (%)" description="Percentuale di anticipo che puoi versare" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
                     <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
+              </div>
+              <div className="flex justify-between">
+                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <div className="flex gap-2">
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
+                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                </div>
+              </div>
+              </motion.div>
+          )}
+
+          {!loading && step===2 && (
+            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 2 – Scenari</h2>
+              <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Scenari</h3>
+                  <p className="text-sm text-slate-600 mb-2">Durata del mutuo e dell'investimento</p>
                   <div className="flex flex-col gap-3">
                     {scenarioYears.map((y, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -741,18 +787,18 @@ export default function App(){
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(price>0 ? 1 : 0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
           )}
 
-          {!loading && step===2 && (
-            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Entrate</h2>
+          {!loading && step===3 && (
+            <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 3 – Entrate</h2>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Risorse</h3>
@@ -764,18 +810,18 @@ export default function App(){
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
           )}
 
-          {!loading && step===3 && (
-            <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Investimenti</h2>
+          {!loading && step===4 && (
+            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 4 – Investimenti</h2>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
@@ -805,7 +851,7 @@ export default function App(){
                 )}
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
                   <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
@@ -814,8 +860,8 @@ export default function App(){
               </motion.div>
           )}
 
-            {!loading && step===4 && (
-              <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+            {!loading && step===5 && (
+              <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
                 <h2 className="text-lg font-medium">Here we go!</h2>
                 {!hasInvestment && (
                   <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
@@ -824,7 +870,7 @@ export default function App(){
                   <>
                     {scenarioStats.map(({ years, s, be, payTime, label }, idx) => (
                       <Card key={idx}>
-                        <h3 className="text-md font-medium mb-2">Mutuo {years} anni</h3>
+                        <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <KPICard title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
                           <KPICard title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
@@ -836,7 +882,7 @@ export default function App(){
                               { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
                               { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
                               { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] },
-                              { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", pct(s.gainReal/price)], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                              { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", price>0 ? pct(s.gainReal/price) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
                               { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
                             ]}
                           />
@@ -898,12 +944,12 @@ export default function App(){
                             <div className="flex items-center justify-between mb-2">
                               <div className="font-semibold">{label}</div>
                               <span className={`px-2 py-1 text-xs rounded-full ${better[idx] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                {better[idx] ? 'Conviene MUTUO + investimento' : 'Conviene CASH'}
+                                {better[idx] ? (price>0 ? 'Conviene MUTUO + investimento' : 'Investimento profittevole') : (price>0 ? 'Conviene CASH' : 'Meglio non investire')}
                               </span>
                             </div>
                             <ul className="text-sm text-slate-600 space-y-1">
                               <li>% stipendio annuo: <b>{salary > 0 ? pct(s.gainReal / salary) : "–"}</b></li>
-                              <li>% prezzo casa: <b>{pct(s.gainReal / price)}</b></li>
+                              <li>% prezzo casa: <b>{price>0 ? pct(s.gainReal / price) : "–"}</b></li>
                               <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (s.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
                               <li>Break-even lordo: <b>{pct(be)}</b></li>
                               <li>Guadagno reale stimato: <b>{fmt(s.gainReal)}</b></li>
@@ -948,7 +994,7 @@ export default function App(){
                 <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
+                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
                 <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
               </div>
             </motion.div>
