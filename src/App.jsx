@@ -618,9 +618,9 @@ export default function App(){
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ConfigCard
                   icon={Home}
-                  title="Vuoi solo il mutuo?"
-                  description="Scopri l'andamento del debito senza investimenti. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Nessun investimento"]}
+                  title="Stai valutando un mutuo?"
+                  description="Scopri l'andamento del debito. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
+                  details={["Mutuo €150k", "Anticipo 15%"]}
                   onSteps={() => {
                     applyConfig(1);
                     setStep(1);
@@ -636,7 +636,7 @@ export default function App(){
                 />
                 <ConfigCard
                   icon={PiggyBank}
-                  title="Hai risparmi mensili da investire?"
+                  title="Stai valutando un mutuo con risparmi mensili da investire?"
                   description="Valuta quando chiudere il mutuo investendo 300€ al mese. Durate 10-20-30 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
                   onSteps={() => {
@@ -654,7 +654,7 @@ export default function App(){
                 />
                 <ConfigCard
                   icon={Wallet}
-                  title="Investi la tua disponibilità?"
+                  title="Stai valutando un mutuo investendo con capitale iniziali da investire?"
                   description="Simula la chiusura anticipata investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
                   onSteps={() => {
@@ -672,7 +672,7 @@ export default function App(){
                 />
                 <ConfigCard
                   icon={WalletCards}
-                  title="Hai già capitale investito?"
+                  title="Stai valutando quanto convenga accedere ad un mutuo avendo capitale iniziale da investire?"
                   description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
                   details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
                   onSteps={() => {
