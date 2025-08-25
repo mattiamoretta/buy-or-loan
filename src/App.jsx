@@ -324,8 +324,8 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
 
 function Stepper({ step }) {
   const labels = [
-    "Mutuo",
     "Scenari",
+    "Mutuo",
     "Entrate",
     "Investimenti",
     "Risultati",
@@ -367,7 +367,7 @@ function Stepper({ step }) {
 
 // -------------------- App --------------------
 export default function App(){
-  // Wizard: 0..4 (0 = landing)
+  // Wizard: 0..5 (0 = landing)
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState(null);
@@ -653,7 +653,7 @@ export default function App(){
                   details={["Capitale iniziale €10k", "Versamento 300€/mese"]}
                   onSteps={() => {
                     applyConfig(5);
-                    setStep(2);
+                    setStep(1);
                   }}
                   onResults={() => {
                     applyConfig(5);
@@ -722,9 +722,9 @@ export default function App(){
             </motion.div>
           )}
 
-          {!loading && step===1 && (
-            <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 1 – Mutuo</h2>
+          {!loading && step===2 && (
+            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 2 – Mutuo</h2>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
@@ -736,18 +736,18 @@ export default function App(){
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
           )}
 
-          {!loading && step===2 && (
-            <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Scenari</h2>
+          {!loading && step===1 && (
+            <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">Step 1 – Scenari</h2>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Scenari</h3>
@@ -787,10 +787,10 @@ export default function App(){
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(price>0 ? 1 : 0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -878,63 +878,97 @@ export default function App(){
                         <div className="mt-4">
                           <MiniTable
                             title="Dettagli"
-                            sections={[
-                              { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
-                              { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
-                              { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] },
-                              { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", price>0 ? pct(s.gainReal/price) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
-                              { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
-                            ]}
+                            sections={(
+                              price > 0
+                                ? [
+                                    { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
+                                    { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
+                                    { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] },
+                                    { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", price>0 ? pct(s.gainReal/price) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
+                                    { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
+                                  ]
+                                : [
+                                    { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
+                                    { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] }
+                                  ]
+                            )}
                           />
-                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                          {price > 0 && (
+                            <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                          )}
                         </div>
                       </Card>
                     ))}
 
-                    <Card>
-                      <div className="flex items-center gap-2 mb-3">
-                        <TrendingUp className="w-5 h-5" />
-                        <h2 className="text-lg font-medium">Guadagno reale netto vs rendimento lordo</h2>
-                      </div>
-                      <div className="h-72">
-                        <ResponsiveContainer>
-                          <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                            <XAxis dataKey="r" tickFormatter={(v) => `${v}%`} />
-                            <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                            <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Rendimento lordo ${l}%`} />
-                            <Legend />
-                            <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                            {scenarioStats.map(({ label }, idx) => (
-                              <Line key={label} type="monotone" dataKey={label} stroke={colors[idx % colors.length]} dot={false} strokeWidth={2} />
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
+                    {price > 0 ? (
+                      <>
+                        <Card>
+                          <div className="flex items-center gap-2 mb-3">
+                            <TrendingUp className="w-5 h-5" />
+                            <h2 className="text-lg font-medium">Guadagno reale netto vs rendimento lordo</h2>
+                          </div>
+                          <div className="h-72">
+                            <ResponsiveContainer>
+                              <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                                <XAxis dataKey="r" tickFormatter={(v) => `${v}%`} />
+                                <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                                <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Rendimento lordo ${l}%`} />
+                                <Legend />
+                                <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                                {scenarioStats.map(({ label }, idx) => (
+                                  <Line key={label} type="monotone" dataKey={label} stroke={colors[idx % colors.length]} dot={false} strokeWidth={2} />
+                                ))}
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card>
 
-                    <Card>
-                      <div className="flex items-center gap-2 mb-3">
-                        <TrendingUp className="w-5 h-5" />
-                        <h2 className="text-lg font-medium">Guadagno nominale e reale nel tempo</h2>
-                      </div>
-                      <div className="h-72">
-                        <ResponsiveContainer>
-                          <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                            <XAxis dataKey="year" />
-                            <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                            <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
-                            <Legend />
-                            <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                            {scenarioStats.map(({ label }, idx) => (
-                              <React.Fragment key={label}>
-                                <Line type="monotone" dataKey={`${label} nominale`} stroke={colors[idx % colors.length]} strokeDasharray="5 5" dot={false} />
-                                <Line type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
-                              </React.Fragment>
-                            ))}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
+                        <Card>
+                          <div className="flex items-center gap-2 mb-3">
+                            <TrendingUp className="w-5 h-5" />
+                            <h2 className="text-lg font-medium">Guadagno nominale e reale nel tempo</h2>
+                          </div>
+                          <div className="h-72">
+                            <ResponsiveContainer>
+                              <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                                <XAxis dataKey="year" />
+                                <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                                <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
+                                <Legend />
+                                <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                                {scenarioStats.map(({ label }, idx) => (
+                                  <React.Fragment key={label}>
+                                    <Line type="monotone" dataKey={`${label} nominale`} stroke={colors[idx % colors.length]} strokeDasharray="5 5" dot={false} />
+                                    <Line type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
+                                  </React.Fragment>
+                                ))}
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card>
+                      </>
+                    ) : (
+                      <Card>
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-5 h-5" />
+                          <h2 className="text-lg font-medium">Andamento dei guadagni nel tempo</h2>
+                        </div>
+                        <div className="h-72">
+                          <ResponsiveContainer>
+                            <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                              <XAxis dataKey="year" />
+                              <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                              <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
+                              <Legend />
+                              <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                              {scenarioStats.map(({ label }, idx) => (
+                                <Line key={label} type="monotone" dataKey={`${label} reale`} stroke={colors[idx % colors.length]} strokeWidth={2} dot={false} />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </Card>
+                    )}
 
                     <Card>
                       <h2 className="text-lg font-medium mb-2">Conclusione</h2>
