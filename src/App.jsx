@@ -9,7 +9,10 @@ const fmt2 = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EU
 const pct = (n) => `${(n * 100).toFixed(2)}%`;
 
 function pmt(principal, annualRate, years){
-  const r = annualRate/12; const n = years*12; return (principal*r)/(1-Math.pow(1+r,-n));
+  if(principal === 0) return 0;
+  const r = annualRate/12; const n = years*12;
+  if(r === 0) return principal/n;
+  return (principal*r)/(1-Math.pow(1+r,-n));
 }
 function investFV({ initial=0, monthly=0, grossReturn=0, taxRate=0, years=0, investInitial=true, investMonthly=true }){
   const rNet = grossReturn * (1 - taxRate);
@@ -51,6 +54,10 @@ function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initia
 function mortgageBalance({ principal, annualRate, years, afterYears }){
   const payment = pmt(principal, annualRate, years);
   const r = annualRate/12; const t = Math.round(afterYears*12);
+  if(r === 0) {
+    const bal = principal - payment * t;
+    return Math.max(0, bal);
+  }
   const bal = principal*Math.pow(1+r, t) - payment*((Math.pow(1+r, t)-1)/r);
   return Math.max(0, bal);
 }
@@ -160,8 +167,8 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
   return (
     <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
       {Icon ? (
-        <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-orange-600" />
+        <div className="flex items-center gap-3">
+          <Icon className="w-8 h-8 text-orange-600" />
           <h3 className="text-md font-medium text-slate-800">{title}</h3>
         </div>
       ) : (
@@ -317,6 +324,33 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
             ))}
           </tbody>
         </table>
+      </div>
+    </details>
+  );
+}
+
+function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl, gross, tax, investInitial, investMonthly, minGainPct, salary }){
+  return (
+    <details className="mb-4">
+      <summary className="cursor-pointer text-sm text-orange-600">Riepilogo dati</summary>
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+        <span>Prezzo casa: <b>{fmt(price)}</b></span>
+        <span>Anticipo: <b>{pct(downPct)}</b></span>
+        <span>TAN: <b>{pct(tan)}</b></span>
+        <span>Durate scenari: <b>{scenarioYears.join(', ')} anni</b></span>
+        <span>Capitale iniziale: <b>{fmt(initialCapital)}</b></span>
+        <span>Disponibilità mensile: <b>{fmt(cois)}</b></span>
+        <span>Inflazione: <b>{pct(infl)}</b></span>
+        {(investInitial || investMonthly) && (
+          <>
+            <span>Rendimento lordo: <b>{pct(gross)}</b></span>
+            <span>Tasse rendimenti: <b>{pct(tax)}</b></span>
+          </>
+        )}
+        <span>Investi capitale iniziale: <b>{investInitial ? 'Sì' : 'No'}</b></span>
+        <span>Investi disponibilità mensile: <b>{investMonthly ? 'Sì' : 'No'}</b></span>
+        <span>Soglia guadagno minimo: <b>{pct(minGainPct)}</b></span>
+        <span>Stipendio netto annuo: <b>{fmt(salary)}</b></span>
       </div>
     </details>
   );
@@ -585,6 +619,15 @@ export default function App(){
         setLoading(true);
         setTimeout(()=>{setLoading(false); setStep(5);},2000);
       };
+      const principal = price * (1 - downPct);
+      if(principal <= 0){
+        setPopup({
+          message: "L'importo del mutuo è 0; i risultati mostreranno solo l'investimento.",
+          onConfirm: () => { setPopup(null); proceed(); },
+          onCancel: () => setPopup(null),
+        });
+        return;
+      }
       if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
         setPopup({
           message: "Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.",
@@ -863,6 +906,7 @@ export default function App(){
             {!loading && step===5 && (
               <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
                 <h2 className="text-lg font-medium">Here we go!</h2>
+                <Recap price={price} downPct={downPct} tan={tan} scenarioYears={scenarioYears} initialCapital={initialCapital} cois={cois} infl={infl} gross={gross} tax={tax} investInitial={investInitial} investMonthly={investMonthly} minGainPct={minGainPct} salary={salary} />
                 {!hasInvestment && (
                   <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
                 )}
@@ -871,10 +915,17 @@ export default function App(){
                     {scenarioStats.map(({ years, s, be, payTime, label }, idx) => (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <KPICard title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
-                          <KPICard title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
-                        </div>
+                        {price > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <KPICard title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
+                            <KPICard title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <KPICard title="Valore finale nominale" value={fmt(s.fvNominal)} />
+                            <KPICard title="Valore finale reale" value={fmt(s.fvReal)} />
+                          </div>
+                        )}
                         <div className="mt-4">
                           <MiniTable
                             title="Dettagli"
