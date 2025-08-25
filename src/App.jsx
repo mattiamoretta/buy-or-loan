@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards } from "lucide-react";
 
+import { Link } from "react-router-dom";
+
 // -------------------- Utils --------------------
 const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const fmt2 = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
@@ -198,6 +200,15 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
     </div>
   );
 }
+  function GuideCard({ to, title, description }) {
+    return (
+      <Link to={to} className="block p-5 bg-white rounded-2xl shadow border border-slate-200 hover:shadow-md transition">
+        <h3 className="text-md font-medium mb-1">{title}</h3>
+        <p className="text-sm text-slate-600">{description}</p>
+      </Link>
+    );
+  }
+
 
 function YearSelector({ label, value, onChange, description }){
   const presets = [10, 20, 30];
@@ -610,85 +621,21 @@ export default function App(){
           )}
 
           {!loading && step===0 && (
-            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-              <div className="text-center">
-                <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">Inizia</button>
-              </div>
-              <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ConfigCard
-                  icon={Home}
-                  title="Vuoi solo il mutuo?"
-                  description="Scopri l'andamento del debito senza investimenti. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Nessun investimento"]}
-                  onSteps={() => {
-                    applyConfig(1);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(1);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(4);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={PiggyBank}
-                  title="Hai risparmi mensili da investire?"
-                  description="Valuta quando chiudere il mutuo investendo 300€ al mese. Durate 10-20-30 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
-                  onSteps={() => {
-                    applyConfig(2);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(2);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(4);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={Wallet}
-                  title="Investi la tua disponibilità?"
-                  description="Simula la chiusura anticipata investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
-                  onSteps={() => {
-                    applyConfig(3);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(3);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(4);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={WalletCards}
-                  title="Hai già capitale investito?"
-                  description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
-                  onSteps={() => {
-                    applyConfig(4);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(4);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(4);
-                    }, 2000);
-                  }}
-                />
-              </div>
+            <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-12">
+              <section className="text-center py-20">
+                <h1 className="text-4xl font-bold mb-4">Buy or Loan</h1>
+                <p className="text-lg mb-6">Confronta mutuo e investimento per prendere la decisione migliore.</p>
+                <a href="#guide" className="px-6 py-3 bg-orange-600 text-white rounded-xl shadow">Scopri di più</a>
+              </section>
+              <section id="guide" className="space-y-6">
+                <h2 className="text-2xl font-semibold text-center">Guide</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <GuideCard to="/mutuo" title="Mutuo" description="Concetti base del mutuo." />
+                  <GuideCard to="/mutuo-risparmi-chiusura" title="Mutuo e risparmi" description="Usa i risparmi per chiudere il mutuo." />
+                  <GuideCard to="/mutuo-investimento" title="Mutuo e investimento" description="Combina mutuo e investimento." />
+                  <GuideCard to="/investimento" title="Investimento" description="Strategie di investimento." />
+                </div>
+              </section>
             </motion.div>
           )}
 
