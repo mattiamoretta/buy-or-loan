@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards, ArrowDownCircle, ArrowUpCircle, Clock, Percent } from "lucide-react";
@@ -280,10 +280,23 @@ function KPICard({ title, value, subtitle, icon: Icon, iconClass = "" }){
 function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
   const { rows, payoffMonth } = useMemo(() => amortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
   const showSavings = initial > 0 || monthly > 0;
+  const containerRef = useRef(null);
+  const payoffRef = useRef(null);
+  useEffect(() => {
+    if (containerRef.current && payoffRef.current) {
+      containerRef.current.scrollTop = Math.max(
+        payoffRef.current.offsetTop - containerRef.current.offsetTop - 32,
+        0
+      );
+    }
+  }, [rows, payoffMonth]);
   return (
     <details className="mt-4" open>
-      <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento</summary>
-      <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
+      <summary className="cursor-pointer text-sm text-orange-600">Andamento mutuo</summary>
+      {showSavings && payoffMonth && (
+        <p className="text-xs text-slate-500 mt-1">La riga in verde indica la prima rata in cui i risparmi coprono il residuo del mutuo.</p>
+      )}
+      <div ref={containerRef} className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
         <table className="min-w-full text-xs tabular-nums">
           <thead className="bg-slate-100 sticky top-0 z-10">
             <tr>
@@ -297,7 +310,11 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.month} className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}>
+              <tr
+                key={r.month}
+                ref={showSavings && r.month === payoffMonth ? payoffRef : null}
+                className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}
+              >
                 <td className="px-2 py-1 font-mono text-right">{r.month}</td>
                 <td className="px-2 py-1 font-mono text-right">{fmt2(r.interest)}</td>
                 <td className="px-2 py-1 font-mono text-right">{fmt2(r.capital)}</td>
@@ -905,9 +922,16 @@ export default function App(){
                               <KPICard icon={Percent} iconClass="text-slate-500" title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <KPICard icon={ArrowUpCircle} iconClass="text-emerald-600" title="Valore finale nominale" value={fmt(s.fvNominal)} />
-                              <KPICard icon={ArrowUpCircle} iconClass="text-emerald-600" title="Valore finale reale" value={fmt(s.fvReal)} />
+                          <div className="grid grid-cols-1 gap-3">
+                              <DataCard
+                                icon={ArrowUpCircle}
+                                iconClass="text-emerald-600"
+                                label="Valore finale"
+                                items={[
+                                  { label: "Nominale", value: fmt(s.fvNominal), hint: "senza inflazione" },
+                                  { label: "Reale", value: fmt(s.fvReal), hint: "considerando inflazione" },
+                                ]}
+                              />
                           </div>
                         )}
 
@@ -917,19 +941,40 @@ export default function App(){
                               <div>
                                 <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  <DataCard icon={ArrowDownCircle} iconClass="text-red-500" label="Interessi nominali" value={fmt(s.interestNominal)} />
-                                  <DataCard icon={ArrowDownCircle} iconClass="text-red-500" label="Interessi reali (PV)" value={fmt(s.interestReal)} />
-                                  <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
+                                  <DataCard
+                                    icon={ArrowDownCircle}
+                                    iconClass="text-red-500"
+                                    label="Interessi"
+                                    items={[
+                                      { label: "Nominali", value: fmt(s.interestNominal), hint: "senza inflazione" },
+                                      { label: "Reali (PV)", value: fmt(s.interestReal), hint: "considerando inflazione" },
+                                    ]}
+                                  />
+                                  <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
                                 </div>
                               </div>
                             )}
                             <div>
                               <div className="text-xs font-semibold text-slate-600 mb-2">Investimento</div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <DataCard icon={ArrowUpCircle} iconClass="text-emerald-600" label="Valore finale nominale" value={fmt(s.fvNominal)} />
-                                <DataCard icon={ArrowUpCircle} iconClass="text-emerald-600" label="Valore finale reale" value={fmt(s.fvReal)} />
-                                <DataCard icon={ArrowUpCircle} iconClass="text-emerald-600" label="Guadagno nominale" value={fmt(s.gainNominal)} />
-                                <DataCard icon={ArrowUpCircle} iconClass="text-emerald-600" label="Guadagno reale" value={fmt(s.gainReal)} />
+                                <DataCard
+                                  icon={ArrowUpCircle}
+                                  iconClass="text-emerald-600"
+                                  label="Valore finale"
+                                  items={[
+                                    { label: "Nominale", value: fmt(s.fvNominal), hint: "senza inflazione" },
+                                    { label: "Reale", value: fmt(s.fvReal), hint: "considerando inflazione" },
+                                  ]}
+                                />
+                                <DataCard
+                                  icon={ArrowUpCircle}
+                                  iconClass="text-emerald-600"
+                                  label="Guadagno"
+                                  items={[
+                                    { label: "Nominale", value: fmt(s.gainNominal), hint: "senza inflazione" },
+                                    { label: "Reale", value: fmt(s.gainReal), hint: "considerando inflazione" },
+                                  ]}
+                                />
                                 <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
                                 <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={price>0 ? pct(s.gainReal/price) : "–"} />
                                 <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
@@ -1058,8 +1103,15 @@ export default function App(){
                         </div>
                         <div className="mt-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                            <DataCard icon={ArrowDownCircle} iconClass="text-red-500" label="Interessi nominali" value={fmt(s.interestNominal)} />
-                            <DataCard icon={ArrowDownCircle} iconClass="text-red-500" label="Interessi reali (PV)" value={fmt(s.interestReal)} />
+                            <DataCard
+                              icon={ArrowDownCircle}
+                              iconClass="text-red-500"
+                              label="Interessi"
+                              items={[
+                                { label: "Nominali", value: fmt(s.interestNominal), hint: "senza inflazione" },
+                                { label: "Reali (PV)", value: fmt(s.interestReal), hint: "considerando inflazione" },
+                              ]}
+                            />
                             <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
                           </div>
                           <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
