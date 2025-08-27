@@ -928,8 +928,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Valore finale"
                                 items={[
-                                  { label: "Nominale", value: fmt(s.fvNominal), hint: "senza inflazione" },
-                                  { label: "Reale", value: fmt(s.fvReal), hint: "considerando inflazione" },
+                                  { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
+                                  { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
                                 ]}
                               />
                           </div>
@@ -946,8 +946,8 @@ export default function App(){
                                     iconClass="text-red-500"
                                     label="Interessi"
                                     items={[
-                                      { label: "Nominali", value: fmt(s.interestNominal), hint: "senza inflazione" },
-                                      { label: "Reali (PV)", value: fmt(s.interestReal), hint: "considerando inflazione" },
+                                      { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
+                                      { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
                                     ]}
                                   />
                                   <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
@@ -962,8 +962,8 @@ export default function App(){
                                   iconClass="text-emerald-600"
                                   label="Valore finale"
                                   items={[
-                                    { label: "Nominale", value: fmt(s.fvNominal), hint: "senza inflazione" },
-                                    { label: "Reale", value: fmt(s.fvReal), hint: "considerando inflazione" },
+                                    { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
+                                    { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
                                   ]}
                                 />
                                 <DataCard
@@ -971,8 +971,8 @@ export default function App(){
                                   iconClass="text-emerald-600"
                                   label="Guadagno"
                                   items={[
-                                    { label: "Nominale", value: fmt(s.gainNominal), hint: "senza inflazione" },
-                                    { label: "Reale", value: fmt(s.gainReal), hint: "considerando inflazione" },
+                                    { label: "Nominale (senza inflazione)", value: fmt(s.gainNominal) },
+                                    { label: "Reale (considerando inflazione)", value: fmt(s.gainReal) },
                                   ]}
                                 />
                                 <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
@@ -1108,8 +1108,8 @@ export default function App(){
                               iconClass="text-red-500"
                               label="Interessi"
                               items={[
-                                { label: "Nominali", value: fmt(s.interestNominal), hint: "senza inflazione" },
-                                { label: "Reali (PV)", value: fmt(s.interestReal), hint: "considerando inflazione" },
+                                { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
+                                { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
                               ]}
                             />
                             <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
