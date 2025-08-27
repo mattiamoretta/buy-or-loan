@@ -920,7 +920,7 @@ export default function App(){
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
                         <div className="mt-4">
-                          <div className={`grid grid-cols-1 ${price > 0 ? "md:grid-cols-3" : "md:grid-cols-2"} gap-3`}>
+                          <div className={`grid grid-cols-1 ${price > 0 ? "md:grid-cols-2" : ""} gap-3`}>
                             {price > 0 && (
                               <div>
                                 <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
@@ -967,8 +967,8 @@ export default function App(){
                                 {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
                               </div>
                             </div>
-                            <div>
-                              <div className="text-xs font-semibold text-slate-600 mb-2">Capitale finale</div>
+                            <div className={`${price > 0 ? "md:col-span-2" : ""} flex flex-col items-center`}>
+                              <div className="text-xs font-semibold text-slate-600 mb-2 text-center">Capitale finale</div>
                               <DataCard
                                 featured
                                 icon={PiggyBank}
