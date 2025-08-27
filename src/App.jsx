@@ -919,67 +919,65 @@ export default function App(){
                       return (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
-                        <div className="mt-4">
-                          <div className={`grid grid-cols-1 ${price > 0 ? "md:grid-cols-2" : ""} gap-3`}>
-                            {price > 0 && (
-                              <div>
-                                <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
-                                  <DataCard
-                                    icon={ArrowDownCircle}
-                                    iconClass="text-red-500"
-                                    label="Interessi"
-                                    items={[
-                                      { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
-                                      { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
-                                    ]}
-                                  />
-                                  <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
-                                </div>
-                                <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
-                              </div>
-                            )}
+                        <div className="mt-4 space-y-6">
+                          {price > 0 && (
                             <div>
-                              <div className="text-xs font-semibold text-slate-600 mb-2">Investimento</div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
+                                <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
                                 <DataCard
-                                  icon={ArrowUpCircle}
-                                  iconClass="text-emerald-600"
-                                  label="Valore finale"
+                                  icon={ArrowDownCircle}
+                                  iconClass="text-red-500"
+                                  label="Interessi"
                                   items={[
-                                    { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
-                                    { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
+                                    { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
+                                    { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
                                   ]}
                                 />
-                                <DataCard
-                                  icon={ArrowUpCircle}
-                                  iconClass="text-emerald-600"
-                                  label="Guadagno"
-                                  items={[
-                                    { label: "Nominale (senza inflazione)", value: fmt(s.gainNominal) },
-                                    { label: "Reale (considerando inflazione)", value: fmt(s.gainReal) },
-                                  ]}
-                                />
-                                <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
-                                <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={price>0 ? pct(s.gainReal/price) : "–"} />
-                                <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
-                                {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
+                                <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
                               </div>
+                              <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                             </div>
-                            <div className={`${price > 0 ? "md:col-span-2" : ""} flex flex-col items-center`}>
-                              <div className="text-xs font-semibold text-slate-600 mb-2 text-center">Capitale finale</div>
+                          )}
+                          <div>
+                            <div className="text-xs font-semibold text-slate-600 mb-2">Investimento</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                               <DataCard
-                                featured
-                                icon={PiggyBank}
+                                icon={ArrowUpCircle}
                                 iconClass="text-emerald-600"
-                                label="Capitale finale"
+                                label="Valore finale"
                                 items={[
-                                  { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
-                                  { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                                  { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
+                                  { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
                                 ]}
                               />
+                              <DataCard
+                                icon={ArrowUpCircle}
+                                iconClass="text-emerald-600"
+                                label="Guadagno"
+                                items={[
+                                  { label: "Nominale (senza inflazione)", value: fmt(s.gainNominal) },
+                                  { label: "Reale (considerando inflazione)", value: fmt(s.gainReal) },
+                                ]}
+                              />
+                              <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
+                              <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={price>0 ? pct(s.gainReal/price) : "–"} />
+                              <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
+                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
                             </div>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="text-xs font-semibold text-slate-600 mb-2 text-center">Capitale finale</div>
+                            <DataCard
+                              featured
+                              icon={PiggyBank}
+                              iconClass="text-emerald-600"
+                              label="Capitale finale"
+                              items={[
+                                { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
+                                { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                              ]}
+                            />
                           </div>
                         </div>
                       </Card>
