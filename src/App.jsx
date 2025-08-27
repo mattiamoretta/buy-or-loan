@@ -908,6 +908,9 @@ export default function App(){
               <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
                 <h2 className="text-lg font-medium">Here we go!</h2>
                 <Recap price={price} downPct={downPct} tan={tan} scenarioYears={scenarioYears} initialCapital={initialCapital} cois={cois} infl={infl} gross={gross} tax={tax} investInitial={investInitial} investMonthly={investMonthly} minGainPct={minGainPct} salary={salary} />
+                <div className="text-xs text-slate-500">
+                  <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
+                </div>
                 {!hasInvestment && (
                   <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
                 )}
@@ -930,8 +933,8 @@ export default function App(){
                                   iconClass="text-red-500"
                                   label="Interessi"
                                   items={[
-                                    { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
-                                    { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
+                                    { label: "Nominali", value: fmt(s.interestNominal) },
+                                    { label: "Reali", value: fmt(s.interestReal) },
                                   ]}
                                 />
                                 <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
@@ -947,8 +950,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Valore finale"
                                 items={[
-                                  { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
-                                  { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
+                                  { label: "Nominale", value: fmt(s.fvNominal) },
+                                  { label: "Reale", value: fmt(s.fvReal) },
                                 ]}
                               />
                               <DataCard
@@ -956,8 +959,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Guadagno"
                                 items={[
-                                  { label: "Nominale (senza inflazione)", value: fmt(s.gainNominal) },
-                                  { label: "Reale (considerando inflazione)", value: fmt(s.gainReal) },
+                                  { label: "Nominale", value: fmt(s.gainNominal) },
+                                  { label: "Reale", value: fmt(s.gainReal) },
                                 ]}
                               />
                               <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
@@ -974,8 +977,8 @@ export default function App(){
                               iconClass="text-emerald-600"
                               label="Capitale finale"
                               items={[
-                                { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
-                                { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                                { label: "Nominale", value: fmt(finalNom) },
+                                { label: "Reale", value: fmt(finalReal) },
                               ]}
                             />
                           </div>
@@ -1074,7 +1077,7 @@ export default function App(){
                               <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (s.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
                               <li>Break-even lordo: <b>{pct(be)}</b></li>
                               <li>Guadagno reale stimato: <b>{fmt(s.gainReal)}</b></li>
-                              <li>Interessi reali (PV): <b>{fmt(s.interestReal)}</b></li>
+                              <li>Interessi reali: <b>{fmt(s.interestReal)}</b></li>
                               <li>
                                 {minGainPct > 0 ? (
                                   <>Scostamento dalla % attesa: <b>{pct(diffs[idx].diffPct)}</b> ({fmt(diffs[idx].diffAmt)})</>
@@ -1105,8 +1108,8 @@ export default function App(){
                               iconClass="text-red-500"
                               label="Interessi"
                               items={[
-                                { label: "Nominali (senza inflazione)", value: fmt(s.interestNominal) },
-                                { label: "Reali (PV, considerando inflazione)", value: fmt(s.interestReal) },
+                                { label: "Nominali", value: fmt(s.interestNominal) },
+                                { label: "Reali", value: fmt(s.interestReal) },
                               ]}
                             />
                             <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
@@ -1120,8 +1123,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Capitale finale"
                                 items={[
-                                  { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
-                                  { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                                { label: "Nominale", value: fmt(finalNom) },
+                                { label: "Reale", value: fmt(finalReal) },
                                 ]}
                               />
                             </div>
