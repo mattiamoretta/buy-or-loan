@@ -14,13 +14,15 @@ export default function DataCard({
       {Icon && <Icon className={`w-5 h-5 ${iconClass}`} />}
       <div className="flex flex-col">
         <div className="text-xs text-slate-500">{label}</div>
-        {content.map((it, idx) => (
-          <div key={idx} className="mt-1">
-            {it.label && <div className="text-xs text-slate-500">{it.label}</div>}
-            <div className="text-sm font-medium">{it.value}</div>
-            {it.hint && <div className="text-xs text-slate-400">{it.hint}</div>}
-          </div>
-        ))}
+        <div className="flex flex-col divide-y divide-slate-200 mt-1">
+          {content.map((it, idx) => (
+            <div key={idx} className="pt-1 first:pt-0">
+              {it.label && <div className="text-xs font-semibold text-slate-600">{it.label}</div>}
+              <div className="text-sm font-medium text-slate-800">{it.value}</div>
+              {it.hint && <div className="text-xs text-slate-400">{it.hint}</div>}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

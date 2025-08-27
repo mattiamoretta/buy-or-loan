@@ -284,10 +284,10 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   const payoffRef = useRef(null);
   useEffect(() => {
     if (containerRef.current && payoffRef.current) {
-      containerRef.current.scrollTop = Math.max(
-        payoffRef.current.offsetTop - containerRef.current.offsetTop - 32,
-        0
-      );
+      const container = containerRef.current;
+      const row = payoffRef.current;
+      const headerHeight = container.querySelector('thead')?.offsetHeight || 0;
+      container.scrollTop = Math.max(row.offsetTop - headerHeight, 0);
     }
   }, [rows, payoffMonth]);
   return (
