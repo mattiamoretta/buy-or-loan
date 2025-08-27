@@ -8,7 +8,7 @@ export default function DataCard({
   iconClass = "",
   featured = false,
 }) {
-  const content = items || [{ label: "", value }];
+  const content = items || [{ label: null, value }];
   return (
     <div
       className={
@@ -22,9 +22,12 @@ export default function DataCard({
       )}
       <div className="flex flex-col w-full">
         <div className={featured ? "text-sm text-emerald-700" : "text-xs text-slate-500"}>{label}</div>
-        <div className="flex flex-wrap gap-x-4 mt-1">
+        <div className="mt-1 space-y-1">
           {content.map((it, idx) => (
-            <div key={idx} className="flex items-baseline gap-1">
+            <div
+              key={idx}
+              className={`flex items-baseline ${it.label ? "justify-between" : "justify-end"}`}
+            >
               {it.label && (
                 <div
                   className={
@@ -33,7 +36,7 @@ export default function DataCard({
                       : "text-xs font-semibold text-slate-600"
                   }
                 >
-                  {it.label}:
+                  {it.label}
                 </div>
               )}
               <div
