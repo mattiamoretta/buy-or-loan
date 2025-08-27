@@ -297,7 +297,7 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   const { rows, payoffMonth } = useMemo(() => amortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
   const showSavings = initial > 0 || monthly > 0;
   return (
-    <details className="mt-4">
+    <details className="mt-4" open>
       <summary className="cursor-pointer text-sm text-orange-600">Mostra andamento</summary>
       <div className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
         <table className="min-w-full text-xs tabular-nums">
@@ -927,23 +927,26 @@ export default function App(){
                           </div>
                         )}
                         <div className="mt-4">
-                          <MiniTable
-                            title="Dettagli"
-                            sections={(
-                              price > 0
-                                ? [
-                                    { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
-                                    { title: "Interessi", rows: [["Interessi nominali", fmt(s.interestNominal)], ["Interessi reali (PV)", fmt(s.interestReal)]] },
-                                    { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] },
-                                    { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", price>0 ? pct(s.gainReal/price) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] },
-                                    { title: "Chiusura mutuo", rows: [["Anno chiusura mutuo", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
-                                  ]
-                                : [
-                                    { title: "Investimento", rows: [["Invest. finale nominale", fmt(s.fvNominal)], ["Invest. finale reale", fmt(s.fvReal)]] },
-                                    { title: "Guadagno", rows: [["Guadagno nominale", fmt(s.gainNominal)], ["Guadagno reale", fmt(s.gainReal)]] }
-                                  ]
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {price > 0 && (
+                              <MiniTable
+                                title="Mutuo"
+                                sections={[
+                                  { title: "Riepilogo", rows: [["Rata", fmt2(s.payment)], ["Break-even lordo", pct(be)]] },
+                                  { title: "Interessi", rows: [["Nominali", fmt(s.interestNominal)], ["Reali (PV)", fmt(s.interestReal)]] },
+                                  { title: "Chiusura", rows: [["Anno chiusura", isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`]] }
+                                ]}
+                              />
                             )}
-                          />
+                            <MiniTable
+                              title="Investimento"
+                              sections={[
+                                { title: "Valore finale", rows: [["Nominale", fmt(s.fvNominal)], ["Reale", fmt(s.fvReal)]] },
+                                { title: "Guadagno", rows: [["Nominale", fmt(s.gainNominal)], ["Reale", fmt(s.gainReal)]] },
+                                { title: "Comparazione", rows: [["% stipendio annuo", salary>0 ? pct(s.gainReal/salary) : "–"], ["% prezzo casa", price>0 ? pct(s.gainReal/price) : "–"], ["Mesi di lavoro equivalenti", salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"]] }
+                              ]}
+                            />
+                          </div>
                           {price > 0 && (
                             <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                           )}
