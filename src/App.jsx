@@ -177,14 +177,14 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
       )}
       <p className="text-sm text-slate-600">{description}</p>
       {details.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {details.map((d, i) => (
-            <span key={i} className="px-2 py-1 bg-white rounded-full text-xs text-slate-600">
-              {d}
-            </span>
-          ))}
-        </div>
-      )}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {details.map((d, i) => (
+              <span key={i} className="px-2 py-1 bg-white rounded-full text-xs text-slate-600">
+                {d}
+              </span>
+            ))}
+          </div>
+        )}
       <div className="flex gap-2 justify-center mt-2">
         {onSteps && (
           <button
@@ -913,34 +913,19 @@ export default function App(){
                 )}
                 {hasInvestment ? (
                   <>
-                    {scenarioStats.map(({ years, s, be, payTime, label }, idx) => (
+                    {scenarioStats.map(({ years, s, be, payTime, label }, idx) => {
+                      const finalNom = s.fvNominal + (price > 0 ? price : 0);
+                      const finalReal = s.fvReal + (price > 0 ? price / Math.pow(1 + infl, years) : 0);
+                      return (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
-                        {price > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <KPICard icon={Wallet} iconClass="text-red-500" title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
-                              <KPICard icon={Percent} iconClass="text-slate-500" title="Break-even lordo" value={pct(be)} subtitle="guadagno reale = 0" />
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 gap-3">
-                              <DataCard
-                                icon={ArrowUpCircle}
-                                iconClass="text-emerald-600"
-                                label="Valore finale"
-                                items={[
-                                  { label: "Nominale (senza inflazione)", value: fmt(s.fvNominal) },
-                                  { label: "Reale (considerando inflazione)", value: fmt(s.fvReal) },
-                                ]}
-                              />
-                          </div>
-                        )}
-
                         <div className="mt-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {price > 0 && (
                               <div>
                                 <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
                                   <DataCard
                                     icon={ArrowDownCircle}
                                     iconClass="text-red-500"
@@ -978,15 +963,31 @@ export default function App(){
                                 <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
                                 <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={price>0 ? pct(s.gainReal/price) : "–"} />
                                 <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
+                                {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
                               </div>
                             </div>
                           </div>
                           {price > 0 && (
                             <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
                           )}
+                          <div className="mt-4">
+                            <div className="text-xs font-semibold text-slate-600 mb-2">Capitale finale</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <DataCard
+                                icon={PiggyBank}
+                                iconClass="text-emerald-600"
+                                label="Capitale finale"
+                                items={[
+                                  { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
+                                  { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                                ]}
+                              />
+                            </div>
+                          </div>
                         </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
 
                     {price > 0 ? (
                       <>
@@ -1095,14 +1096,15 @@ export default function App(){
                   </>
                 ) : (
                   <>
-                    {scenarioStats.map(({ years, s, payTime }, idx) => (
+                    {scenarioStats.map(({ years, s, payTime }, idx) => {
+                      const finalNom = s.fvNominal + price;
+                      const finalReal = s.fvReal + price / Math.pow(1 + infl, years);
+                      return (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">Mutuo {years} anni</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <KPICard icon={Wallet} iconClass="text-red-500" title="Rata" value={fmt2(s.payment)} subtitle="€/mese" />
-                        </div>
                         <div className="mt-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                            <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
                             <DataCard
                               icon={ArrowDownCircle}
                               iconClass="text-red-500"
@@ -1115,9 +1117,24 @@ export default function App(){
                             <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
                           </div>
                           <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                          <div className="mt-4">
+                            <div className="text-xs font-semibold text-slate-600 mb-2">Capitale finale</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <DataCard
+                                icon={PiggyBank}
+                                iconClass="text-emerald-600"
+                                label="Capitale finale"
+                                items={[
+                                  { label: "Nominale (senza inflazione)", value: fmt(finalNom) },
+                                  { label: "Reale (considerando inflazione)", value: fmt(finalReal) },
+                                ]}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </>
                 )}
               <div className="flex justify-end">
