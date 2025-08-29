@@ -401,7 +401,7 @@ function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl,
     <details className="mb-4">
       <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">Riepilogo dati</summary>
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-orange-50 p-2 rounded">
-        <span>Prezzo casa: <b>{fmt(price)}</b></span>
+        {price > 0 && <span>Prezzo casa: <b>{fmt(price)}</b></span>}
         <span>Anticipo: <b>{fmt(price * downPct)} ({pct(downPct)})</b></span>
         <span>TAN: <b>{pct(tan)}</b></span>
         <span>Durate scenari: <b>{scenarioYears.join(', ')} anni</b></span>
@@ -427,7 +427,7 @@ function Stepper({ step }) {
   const labels = [
     "Scenari",
     "Mutuo",
-    "Entrate",
+    "Patrimonio",
     "Investimenti",
     "Risultati",
   ];
@@ -500,7 +500,7 @@ export default function App(){
   const [investInitial, setInvestInitial] = useState(true);
   const [investMonthly, setInvestMonthly] = useState(true);
 
-  // Entrate
+  // Patrimonio
   const [salary, setSalary] = useState(30000);
   const [minGainPct, setMinGainPct] = useState(0.1);
 
@@ -734,101 +734,117 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+              <p className="text-center text-lg text-slate-700">Simula e confronta mutuo e investimento per trovare la strategia migliore.</p>
               <div className="text-center">
                 <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">Inizia</button>
               </div>
               <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ConfigCard
-                  icon={Home}
-                  title="Stai valutando un mutuo?"
-                  description="Scopri l'andamento del debito. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
-                  details={["Mutuo €150k", "Anticipo 15%"]}
-                  onSteps={() => {
-                    applyConfig(1);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(1);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(5);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={TrendingUp}
-                  title="Stai valutando un investimento?"
-                  description="Simula un investimento senza mutuo: €10k iniziali e 300€/mese per 20 anni."
-                  details={["Capitale iniziale €10k", "Versamento 300€/mese"]}
-                  onSteps={() => {
-                    applyConfig(5);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(5);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(5);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={PiggyBank}
-                  title="Stai valutando un mutuo con risparmi mensili?"
-                  description="Valuta quando chiudere il mutuo risparmiando 300€ al mese senza investire. Durate 10-20-30 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
-                  onSteps={() => {
-                    applyConfig(2);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(2);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(5);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={Wallet}
-                  title="Stai valutando un mutuo con risparmi mensili da investire?"
-                  description="Valuta quando chiudere il mutuo investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
-                  onSteps={() => {
-                    applyConfig(3);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(3);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(5);
-                    }, 2000);
-                  }}
-                />
-                <ConfigCard
-                  icon={WalletCards}
-                  title="Stai valutando quanto convenga accedere ad un mutuo avendo capitale iniziale da investire?"
-                  description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
-                  details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
-                  onSteps={() => {
-                    applyConfig(4);
-                    setStep(1);
-                  }}
-                  onResults={() => {
-                    applyConfig(4);
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      setStep(5);
-                    }, 2000);
-                  }}
-                />
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2 text-center">Esempi con mutuo</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConfigCard
+                      icon={Home}
+                      title="Stai valutando un mutuo?"
+                      description="Scopri l'andamento del debito. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
+                      details={["Mutuo €150k", "Anticipo 15%"]}
+                      onSteps={() => {
+                        applyConfig(1);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(1);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(5);
+                        }, 2000);
+                      }}
+                    />
+                    <ConfigCard
+                      icon={PiggyBank}
+                      title="Stai valutando un mutuo con risparmi mensili?"
+                      description="Valuta quando chiudere il mutuo risparmiando 300€ al mese senza investire. Durate 10-20-30 anni."
+                      details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
+                      onSteps={() => {
+                        applyConfig(2);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(2);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(5);
+                        }, 2000);
+                      }}
+                    />
+                    <ConfigCard
+                      icon={Wallet}
+                      title="Stai valutando un mutuo con risparmi mensili da investire?"
+                      description="Valuta quando chiudere il mutuo investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
+                      details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
+                      onSteps={() => {
+                        applyConfig(3);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(3);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(5);
+                        }, 2000);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium mb-2 text-center">Caso investimento</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConfigCard
+                      icon={TrendingUp}
+                      title="Stai valutando un investimento?"
+                      description="Simula un investimento senza mutuo: €10k iniziali e 300€/mese per 20 anni."
+                      details={["Capitale iniziale €10k", "Versamento 300€/mese"]}
+                      onSteps={() => {
+                        applyConfig(5);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(5);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(5);
+                        }, 2000);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium mb-2 text-center">Mutuo con capitale iniziale investito</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConfigCard
+                      icon={WalletCards}
+                      title="Stai valutando quanto convenga accedere ad un mutuo avendo il capitale disponibile per investimenti?"
+                      description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
+                      details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
+                      onSteps={() => {
+                        applyConfig(4);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(4);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(5);
+                        }, 2000);
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -909,7 +925,7 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Entrate</h2>
+              <h2 className="text-lg font-medium">Step 3 – Patrimonio</h2>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Risorse</h3>
@@ -1031,7 +1047,7 @@ export default function App(){
                                 ]}
                               />
                               <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
-                              <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={price>0 ? pct(s.gainReal/price) : "–"} />
+                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={pct(s.gainReal/price)} />}
                               <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
                               {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
                             </div>
@@ -1140,7 +1156,7 @@ export default function App(){
                             </div>
                             <ul className="text-sm text-slate-600 space-y-1">
                               <li>% stipendio annuo: <b>{salary > 0 ? pct(s.gainReal / salary) : "–"}</b></li>
-                              <li>% prezzo casa: <b>{price>0 ? pct(s.gainReal / price) : "–"}</b></li>
+                              {price > 0 && <li>% prezzo casa: <b>{pct(s.gainReal / price)}</b></li>}
                               <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (s.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
                               <li>Break-even lordo: <b>{pct(be)}</b></li>
                               <li>Guadagno reale stimato: <b>{fmt(s.gainReal)}</b></li>
