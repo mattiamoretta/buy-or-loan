@@ -116,22 +116,42 @@ function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialC
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
 function Field({ label, value, onChange, min, max, step, prefix, suffix, description }){
-  const [display, setDisplay] = useState(value.toString());
+  const decimals = step && step < 1 ? step.toString().split(".")[1]?.length || 0 : 0;
+  const fmtNumber = (n) =>
+    n.toLocaleString("it-IT", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  const parseNumber = (str) => {
+    const cleaned = str.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+  const [display, setDisplay] = useState(fmtNumber(value));
   useEffect(() => {
-    if (display !== "" && parseFloat(display) !== value) setDisplay(value.toString());
+    setDisplay(fmtNumber(value));
   }, [value]);
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm text-slate-600">{label}</label>
+      {label && <label className="text-sm text-slate-600">{label}</label>}
       <div className="flex items-center gap-2">
         {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
         <input
-          type="number"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 [appearance:textfield]"
+          type="text"
+          inputMode="decimal"
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
           value={display}
-          onChange={(e)=>{ const val = e.target.value; setDisplay(val); onChange(val === "" ? 0 : parseFloat(val)); }}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "") {
+              setDisplay("");
+              onChange(0);
+            } else {
+              const num = parseNumber(val);
+              setDisplay(fmtNumber(num));
+              onChange(num);
+            }
+          }}
           min={min}
           max={max}
           step={step}
@@ -261,6 +281,52 @@ function Checkbox({ label, checked, onChange, description }){
         {label}
       </label>
       {description && <span className="text-xs text-slate-500 ml-6">{description}</span>}
+    </div>
+  );
+}
+
+function DownPaymentField({ price, downPct, setDownPct, mode, setMode }){
+  const value = mode === 'pct' ? downPct * 100 : price * downPct;
+  const handleChange = (v) => {
+    if (mode === 'pct') setDownPct(v / 100);
+    else setDownPct(price ? v / price : 0);
+  };
+  const max = mode === 'pct' ? 90 : price;
+  const step = mode === 'pct' ? 1 : 1000;
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm text-slate-600">Anticipo</label>
+      <div className="flex items-center gap-2">
+        <div className="flex rounded-xl overflow-hidden border border-slate-300">
+          <button
+            type="button"
+            className={`px-3 py-1 text-sm ${mode === 'pct' ? 'bg-orange-600 text-white' : 'bg-white text-slate-600'}`}
+            onClick={() => setMode('pct')}
+          >
+            %
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1 text-sm ${mode === 'amt' ? 'bg-orange-600 text-white' : 'bg-white text-slate-600'}`}
+            onClick={() => setMode('amt')}
+          >
+            €
+          </button>
+        </div>
+        <Field
+          value={value}
+          onChange={handleChange}
+          min={0}
+          max={max}
+          step={step}
+          suffix={mode === 'pct' ? '%' : '€'}
+        />
+      </div>
+      <span className="text-xs text-slate-500">
+        {mode === 'pct'
+          ? 'Percentuale di anticipo che puoi versare'
+          : "Importo dell'anticipo che puoi versare"}
+      </span>
     </div>
   );
 }
@@ -419,6 +485,7 @@ export default function App(){
   // Base
   const [price, setPrice] = useState(150000);
   const [downPct, setDownPct] = useState(0.15);
+  const [downMode, setDownMode] = useState('pct');
   const [scenarioYears, setScenarioYears] = useState([20]);
   const [initialCapital, setInitialCapital] = useState(price*(1-downPct));
 
@@ -774,8 +841,7 @@ export default function App(){
                   <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
                   <Grid>
                     <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
-                    <Field label="Anticipo (%)" description="Percentuale di anticipo che puoi versare" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
-                    <Field label="Anticipo (€)" description="Importo dell'anticipo che puoi versare" value={price * downPct} onChange={(v)=>setDownPct(price ? v/price : 0)} min={0} max={price} step={1000} suffix="€" />
+                    <DownPaymentField price={price} downPct={downPct} setDownPct={setDownPct} mode={downMode} setMode={setDownMode} />
                     <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
