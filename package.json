@@ -10,6 +10,7 @@
     "test": "echo \"No tests defined\""
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.7",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.541.0",
     "react": "^18.2.0",

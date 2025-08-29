@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards, ArrowDownCircle, ArrowUpCircle, Clock, Percent } from "lucide-react";
 import DataCard from "./components/DataCard";
+import ExampleGroup from "./components/ExampleGroup";
 
 // -------------------- Utils --------------------
 const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -739,9 +740,8 @@ export default function App(){
                 <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">Inizia</button>
               </div>
               <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-center">Esempi con mutuo</h3>
+              <div className="space-y-4">
+                <ExampleGroup title="Mutuo">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       icon={Home}
@@ -798,9 +798,8 @@ export default function App(){
                       }}
                     />
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-center">Caso investimento</h3>
+                </ExampleGroup>
+                <ExampleGroup title="Investimento">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       icon={TrendingUp}
@@ -821,9 +820,8 @@ export default function App(){
                       }}
                     />
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-center">Mutuo con capitale iniziale investito</h3>
+                </ExampleGroup>
+                <ExampleGroup title="Mutuo vs pagamento">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       icon={WalletCards}
@@ -844,7 +842,7 @@ export default function App(){
                       }}
                     />
                   </div>
-                </div>
+                </ExampleGroup>
               </div>
             </motion.div>
           )}
