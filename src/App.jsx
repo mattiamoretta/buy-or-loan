@@ -336,7 +336,7 @@ function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl,
       <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">Riepilogo dati</summary>
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-orange-50 p-2 rounded">
         <span>Prezzo casa: <b>{fmt(price)}</b></span>
-        <span>Anticipo: <b>{pct(downPct)}</b></span>
+        <span>Anticipo: <b>{fmt(price * downPct)} ({pct(downPct)})</b></span>
         <span>TAN: <b>{pct(tan)}</b></span>
         <span>Durate scenari: <b>{scenarioYears.join(', ')} anni</b></span>
         <span>Capitale iniziale: <b>{fmt(initialCapital)}</b></span>
@@ -775,6 +775,7 @@ export default function App(){
                   <Grid>
                     <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
                     <Field label="Anticipo (%)" description="Percentuale di anticipo che puoi versare" value={downPct*100} onChange={(v)=>setDownPct(v/100)} min={0} max={90} step={1} suffix="%" />
+                    <Field label="Anticipo (€)" description="Importo dell'anticipo che puoi versare" value={price * downPct} onChange={(v)=>setDownPct(price ? v/price : 0)} min={0} max={price} step={1000} suffix="€" />
                     <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
