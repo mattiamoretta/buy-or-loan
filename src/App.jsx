@@ -662,8 +662,10 @@ export default function App(){
           setInvestMonthly(true);
           break;
         case 4:
+          setPrice(150000);
+          setDownPct(0);
           setScenarioYears([20, 40]);
-          setInitialCapital(50000);
+          setInitialCapital(150000);
           setCois(0);
           setInvestInitial(true);
           setInvestMonthly(false);
@@ -825,9 +827,9 @@ export default function App(){
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       icon={WalletCards}
-                      title="Stai valutando quanto convenga accedere ad un mutuo avendo il capitale disponibile per investimenti?"
-                      description="Decidi se accendere un mutuo tenendo investiti €50k. Confronta durate 20 e 40 anni."
-                      details={["Mutuo €150k", "Anticipo 15%", "Capitale investito €50k", "Rendimento atteso 5%"]}
+                      title="Stai valutando se accendere un mutuo avendo già il capitale necessario?"
+                      description="Hai €150k disponibili: meglio pagare cash o accendere un mutuo e investirli? Confronta durate 20 e 40 anni."
+                      details={["Mutuo €150k", "Anticipo 0%", "Capitale investito €150k", "Rendimento atteso 5%"]}
                       onSteps={() => {
                         applyConfig(4);
                         setStep(1);
