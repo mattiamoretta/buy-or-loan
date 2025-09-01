@@ -33,5 +33,10 @@ export default defineConfig({
   ],
   build: {
     outDir: 'docs'
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.js'
   }
 })
