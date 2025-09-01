@@ -16,58 +16,16 @@ import {
   amortizationSchedule,
   payOffTime,
 } from "./utils/finance";
+import Field from "./components/Field";
+import YearSelector from "./components/YearSelector";
+import Checkbox from "./components/Checkbox";
+import DownPaymentField from "./components/DownPaymentField";
+import KPICard from "./components/KPICard";
+import Stepper from "./components/Stepper";
 
 // -------------------- UI helpers --------------------
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
-function Field({ label, value, onChange, min, max, step, prefix, suffix, description }){
-  const decimals = step && step < 1 ? step.toString().split(".")[1]?.length || 0 : 0;
-  const fmtNumber = (n) =>
-    n.toLocaleString("it-IT", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
-  const parseNumber = (str) => {
-    const cleaned = str.replace(/\./g, "").replace(",", ".");
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : num;
-  };
-  const [display, setDisplay] = useState(fmtNumber(value));
-  useEffect(() => {
-    setDisplay(fmtNumber(value));
-  }, [value]);
-  return (
-    <div className="flex flex-col gap-1">
-      {label && <label className="text-sm text-slate-600">{label}</label>}
-      <div className="flex items-center gap-2">
-        {prefix && <span className="text-slate-500 text-sm">{prefix}</span>}
-        <input
-          type="text"
-          inputMode="decimal"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-          value={display}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "") {
-              setDisplay("");
-              onChange(0);
-            } else {
-              const num = parseNumber(val);
-              setDisplay(fmtNumber(num));
-              onChange(num);
-            }
-          }}
-          min={min}
-          max={max}
-          step={step}
-        />
-        {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
-      </div>
-      {description && <span className="text-xs text-slate-500">{description}</span>}
-    </div>
-  );
-}
-
 function Popup({ message, onConfirm, onCancel }){
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -128,122 +86,6 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function YearSelector({ label, value, onChange, description }){
-  const presets = [10, 20, 30];
-  const [custom, setCustom] = useState(!presets.includes(value));
-  useEffect(() => {
-    setCustom(!presets.includes(value));
-  }, [value]);
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-slate-600">{label}</label>
-      <div className="flex items-center gap-2 flex-wrap">
-        {presets.map((p) => (
-          <button
-            key={p}
-            type="button"
-            className={`px-3 py-1 rounded-lg text-sm ${
-              !custom && value === p ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
-            }`}
-            onClick={() => { onChange(p); setCustom(false); }}
-          >
-            {p}
-          </button>
-        ))}
-        <button
-          type="button"
-          className={`px-3 py-1 rounded-lg text-sm ${
-            custom ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
-          }`}
-          onClick={() => setCustom(true)}
-        >
-          Custom
-        </button>
-        {custom && (
-          <input
-            type="number"
-            className="w-20 rounded-xl border border-slate-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-300"
-            value={value}
-            onChange={(e) => onChange(e.target.value === "" ? 0 : parseInt(e.target.value))}
-            min={1}
-            max={40}
-          />
-        )}
-      </div>
-      {description && <span className="text-xs text-slate-500">{description}</span>}
-    </div>
-  );
-}
-function Checkbox({ label, checked, onChange, description }){
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" className="rounded" checked={checked} onChange={(e)=>onChange(e.target.checked)} />
-        {label}
-      </label>
-      {description && <span className="text-xs text-slate-500 ml-6">{description}</span>}
-    </div>
-  );
-}
-
-function DownPaymentField({ price, downPct, setDownPct, mode, setMode }){
-  const value = mode === 'pct' ? downPct * 100 : price * downPct;
-  const handleChange = (v) => {
-    if (mode === 'pct') setDownPct(v / 100);
-    else setDownPct(price ? v / price : 0);
-  };
-  const max = mode === 'pct' ? 90 : price;
-  const step = mode === 'pct' ? 1 : 1000;
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-slate-600">Anticipo</label>
-      <div className="flex items-center gap-2">
-        <div className="flex rounded-xl overflow-hidden border border-slate-300">
-          <button
-            type="button"
-            className={`px-3 py-1 text-sm ${mode === 'pct' ? 'bg-orange-600 text-white' : 'bg-white text-slate-600'}`}
-            onClick={() => setMode('pct')}
-          >
-            %
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1 text-sm ${mode === 'amt' ? 'bg-orange-600 text-white' : 'bg-white text-slate-600'}`}
-            onClick={() => setMode('amt')}
-          >
-            €
-          </button>
-        </div>
-        <Field
-          value={value}
-          onChange={handleChange}
-          min={0}
-          max={max}
-          step={step}
-          suffix={mode === 'pct' ? '%' : '€'}
-        />
-      </div>
-      <span className="text-xs text-slate-500">
-        {mode === 'pct'
-          ? 'Percentuale di anticipo che puoi versare'
-          : "Importo dell'anticipo che puoi versare"}
-      </span>
-    </div>
-  );
-}
-function KPICard({ title, value, subtitle, icon: Icon, iconClass = "" }){
-  return (
-    <div className="rounded-xl border border-slate-200 p-3 bg-slate-50">
-      <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
-        {Icon && <Icon className={`w-4 h-4 ${iconClass}`} />}
-        <span>{title}</span>
-      </div>
-      <div className="text-lg font-semibold text-orange-600">{value}</div>
-      {subtitle && <div className="text-xs text-slate-400">{subtitle}</div>}
     </div>
   );
 }
@@ -325,49 +167,6 @@ function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl,
         <span>Stipendio netto annuo: <b>{fmt(salary)}</b></span>
       </div>
     </details>
-  );
-}
-
-function Stepper({ step }) {
-  const labels = [
-    "Scenari",
-    "Mutuo",
-    "Patrimonio",
-    "Investimenti",
-    "Risultati",
-  ];
-  const isFinal = step === labels.length;
-  return (
-    <div className="flex items-center mb-8">
-      {labels.map((label, idx) => {
-        const num = idx + 1;
-        const active = step === num;
-        const completed = step > num;
-        return (
-          <React.Fragment key={label}>
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium ${
-                  active || completed
-                    ? "bg-orange-600 text-white"
-                    : "bg-slate-200 text-slate-600"
-                }`}
-              >
-                {num}
-              </div>
-              <span className={`mt-2 text-xs ${isFinal ? "text-white" : "text-slate-600"}`}>{label}</span>
-            </div>
-            {idx < labels.length - 1 && (
-              <div
-                className={`flex-1 h-px mx-2 ${
-                  step > num ? "bg-orange-600" : "bg-slate-300"
-                }`}
-              ></div>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
   );
 }
 
