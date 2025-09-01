@@ -1,11 +1,11 @@
 import React from "react";
 import Field from "./Field";
 
-export default function DownPaymentField({ price, downPct, setDownPct, mode, setMode }) {
-  const value = mode === 'pct' ? downPct * 100 : price * downPct;
-  const handleChange = (v) => {
-    if (mode === 'pct') setDownPct(v / 100);
-    else setDownPct(price ? v / price : 0);
+export default function DownPaymentField({ price, downPaymentRatio, setDownPaymentRatio, mode, setMode }) {
+  const value = mode === 'pct' ? downPaymentRatio * 100 : price * downPaymentRatio;
+  const handleChange = (inputValue) => {
+    if (mode === 'pct') setDownPaymentRatio(inputValue / 100);
+    else setDownPaymentRatio(price ? inputValue / price : 0);
   };
   const max = mode === 'pct' ? 90 : price;
   const step = mode === 'pct' ? 1 : 1000;

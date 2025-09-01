@@ -5,16 +5,16 @@ import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCard
 import DataCard from "./components/DataCard";
 import ExampleGroup from "./components/ExampleGroup";
 
-import { fmt, fmt2, pct } from "./utils/format";
 import {
-  pmt,
-  investFV,
-  mortgageCosts,
-  scenarioGain,
-  breakEvenGross,
-  mortgageBalance,
-  amortizationSchedule,
-  payOffTime,
+  formatCurrency,
+  formatCurrencyWithCents,
+  formatPercentage,
+} from "./utils/format";
+import {
+  calculateScenarioGain,
+  calculateBreakEvenGrossReturn,
+  generateAmortizationSchedule,
+  calculatePayOffTime,
 } from "./utils/finance";
 import Field from "./components/Field";
 import YearSelector from "./components/YearSelector";
@@ -91,7 +91,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
 }
 
 function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
-  const { rows, payoffMonth } = useMemo(() => amortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
+  const { rows, payoffMonth } = useMemo(() => generateAmortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
   const showSavings = initial > 0 || monthly > 0;
   const containerRef = useRef(null);
   const payoffRef = useRef(null);
@@ -129,11 +129,11 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
                 className={`odd:bg-white even:bg-slate-50 ${showSavings && r.month === payoffMonth ? '!bg-emerald-100 font-medium' : ''}`}
               >
                 <td className="px-2 py-1 font-mono text-right">{r.month}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.interest)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.capital)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.balance)}</td>
-                <td className="px-2 py-1 font-mono text-right">{fmt2(r.paidPrincipal)}</td>
-                {showSavings && <td className="px-2 py-1 font-mono text-right">{fmt2(r.available)}</td>}
+                <td className="px-2 py-1 font-mono text-right">{formatCurrencyWithCents(r.interest)}</td>
+                <td className="px-2 py-1 font-mono text-right">{formatCurrencyWithCents(r.capital)}</td>
+                <td className="px-2 py-1 font-mono text-right">{formatCurrencyWithCents(r.balance)}</td>
+                <td className="px-2 py-1 font-mono text-right">{formatCurrencyWithCents(r.paidPrincipal)}</td>
+                {showSavings && <td className="px-2 py-1 font-mono text-right">{formatCurrencyWithCents(r.available)}</td>}
               </tr>
             ))}
           </tbody>
@@ -143,28 +143,28 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   );
 }
 
-function Recap({ price, downPct, tan, scenarioYears, initialCapital, cois, infl, gross, tax, investInitial, investMonthly, minGainPct, salary }){
+function Recap({ price, downPaymentRatio, annualInterestRate, scenarioYears, initialCapital, monthlyContribution, inflationRate, grossReturnRate, taxRate, investInitial, investMonthly, minimumGainPercentage, salary }){
   return (
     <details className="mb-4">
       <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">Riepilogo dati</summary>
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-orange-50 p-2 rounded">
-        {price > 0 && <span>Prezzo casa: <b>{fmt(price)}</b></span>}
-        <span>Anticipo: <b>{fmt(price * downPct)} ({pct(downPct)})</b></span>
-        <span>TAN: <b>{pct(tan)}</b></span>
+        {price > 0 && <span>Prezzo casa: <b>{formatCurrency(price)}</b></span>}
+        <span>Anticipo: <b>{formatCurrency(price * downPaymentRatio)} ({formatPercentage(downPaymentRatio)})</b></span>
+        <span>TAN: <b>{formatPercentage(annualInterestRate)}</b></span>
         <span>Durate scenari: <b>{scenarioYears.join(', ')} anni</b></span>
-        <span>Capitale iniziale: <b>{fmt(initialCapital)}</b></span>
-        <span>Disponibilità mensile: <b>{fmt(cois)}</b></span>
-        <span>Inflazione: <b>{pct(infl)}</b></span>
+        <span>Capitale iniziale: <b>{formatCurrency(initialCapital)}</b></span>
+        <span>Disponibilità mensile: <b>{formatCurrency(monthlyContribution)}</b></span>
+        <span>Inflazione: <b>{formatPercentage(inflationRate)}</b></span>
         {(investInitial || investMonthly) && (
           <>
-            <span>Rendimento lordo: <b>{pct(gross)}</b></span>
-            <span>Tasse rendimenti: <b>{pct(tax)}</b></span>
+            <span>Rendimento lordo: <b>{formatPercentage(grossReturnRate)}</b></span>
+            <span>Tasse rendimenti: <b>{formatPercentage(taxRate)}</b></span>
           </>
         )}
         <span>Investi capitale iniziale: <b>{investInitial ? 'Sì' : 'No'}</b></span>
         <span>Investi disponibilità mensile: <b>{investMonthly ? 'Sì' : 'No'}</b></span>
-        <span>Soglia guadagno minimo: <b>{pct(minGainPct)}</b></span>
-        <span>Stipendio netto annuo: <b>{fmt(salary)}</b></span>
+        <span>Soglia guadagno minimo: <b>{formatPercentage(minimumGainPercentage)}</b></span>
+        <span>Stipendio netto annuo: <b>{formatCurrency(salary)}</b></span>
       </div>
     </details>
   );
@@ -188,71 +188,91 @@ export default function App(){
 
   // Base
   const [price, setPrice] = useState(150000);
-  const [downPct, setDownPct] = useState(0.15);
+  const [downPaymentRatio, setDownPaymentRatio] = useState(0.15);
   const [downMode, setDownMode] = useState('pct');
   const [scenarioYears, setScenarioYears] = useState([20]);
-  const [initialCapital, setInitialCapital] = useState(price*(1-downPct));
+  const [initialCapital, setInitialCapital] = useState(price*(1-downPaymentRatio));
 
   // Tassi
-  const [tan, setTan] = useState(0.03);
-  const [infl, setInfl] = useState(0.02);
-  const [tax, setTax] = useState(0.26);
-  const [gross, setGross] = useState(0.05);
+  const [annualInterestRate, setAnnualInterestRate] = useState(0.03);
+  const [inflationRate, setInflationRate] = useState(0.02);
+  const [taxRate, setTaxRate] = useState(0.26);
+  const [grossReturnRate, setGrossReturnRate] = useState(0.05);
 
   // Contributi e investimenti
-  const [cois, setCois] = useState(0);
+  const [monthlyContribution, setMonthlyContribution] = useState(0);
   const [investInitial, setInvestInitial] = useState(true);
   const [investMonthly, setInvestMonthly] = useState(true);
 
   // Patrimonio
   const [salary, setSalary] = useState(30000);
-  const [minGainPct, setMinGainPct] = useState(0.1);
+  const [minimumGainPercentage, setMinimumGainPercentage] = useState(0.1);
 
   // Calcoli
   const scenarioStats = useMemo(
     () =>
       scenarioYears.map((years) => {
-        const s = scenarioGain({
+        const scenario = calculateScenarioGain({
           price,
-          downPct,
-          tan,
+          downPaymentRatio,
+          annualRate: annualInterestRate,
           years,
-          grossReturn: gross,
-          taxRate: tax,
-          inflation: infl,
+          grossReturnRate,
+          taxRate,
+          inflationRate,
           initialCapital,
-          monthlyExtra: cois,
+          monthlyContribution,
           investInitial,
           investMonthly,
         });
-        const be = breakEvenGross({
+        const breakEven = calculateBreakEvenGrossReturn({
           price,
-          downPct,
-          tan,
+          downPaymentRatio,
+          annualRate: annualInterestRate,
           years,
-          taxRate: tax,
-          inflation: infl,
+          taxRate,
+          inflationRate,
           initialCapital,
-          monthlyExtra: cois,
+          monthlyContribution,
           investInitial,
           investMonthly,
         });
-        const payTime = payOffTime({
+        const payOffTimeYears = calculatePayOffTime({
           price,
-          downPct,
-          tan,
+          downPaymentRatio,
+          annualRate: annualInterestRate,
           years,
-          grossReturn: gross,
-          taxRate: tax,
+          grossReturnRate,
+          taxRate,
           initialCapital,
-          monthlyExtra: cois,
+          monthlyContribution,
           investInitial,
           investMonthly,
         });
         const label = `Scenario ${years} anni`;
-        return { years, s, be, payTime, label, labelN: `${label} nominale`, labelR: `${label} reale` };
+        return {
+          years,
+          scenario,
+          breakEven,
+          payOffTimeYears,
+          label,
+          labelN: `${label} nominale`,
+          labelR: `${label} reale`,
+        };
       }),
-    [scenarioYears, price, downPct, tan, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]
+    [
+      scenarioYears,
+      price,
+      downPaymentRatio,
+      annualInterestRate,
+      grossReturnRate,
+      taxRate,
+      inflationRate,
+      initialCapital,
+      monthlyContribution,
+      investInitial,
+      investMonthly,
+    ]
   );
 
   const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"]; 
@@ -263,16 +283,16 @@ export default function App(){
       const row = { r: +(r * 100).toFixed(2) };
       scenarioYears.forEach((years) => {
         const label = `Scenario ${years} anni`;
-        row[label] = scenarioGain({
+        row[label] = calculateScenarioGain({
           price,
-          downPct,
-          tan,
+          downPaymentRatio,
+          annualRate: annualInterestRate,
           years,
-          grossReturn: r,
-          taxRate: tax,
-          inflation: infl,
+          grossReturnRate: r,
+          taxRate,
+          inflationRate,
           initialCapital,
-          monthlyExtra: cois,
+          monthlyContribution,
           investInitial,
           investMonthly,
         }).gainReal;
@@ -280,7 +300,7 @@ export default function App(){
       rows.push(row);
     }
     return rows;
-  }, [scenarioYears, price, downPct, tan, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  }, [scenarioYears, price, downPaymentRatio, annualInterestRate, taxRate, inflationRate, initialCapital, monthlyContribution, investInitial, investMonthly]);
 
   const yearlyData = useMemo(() => {
     const maxY = Math.max(...scenarioYears);
@@ -289,56 +309,58 @@ export default function App(){
       const row = { year: y };
       scenarioYears.forEach((years) => {
         if (y <= years) {
-          const g = scenarioGain({
+          const scenario = calculateScenarioGain({
             price,
-            downPct,
-            tan,
+            downPaymentRatio,
+            annualRate: annualInterestRate,
             years: y,
-            grossReturn: gross,
-            taxRate: tax,
-            inflation: infl,
+            grossReturnRate,
+            taxRate,
+            inflationRate,
             initialCapital,
-            monthlyExtra: cois,
+            monthlyContribution,
             investInitial,
             investMonthly,
           });
           const label = `Scenario ${years} anni`;
-          row[`${label} nominale`] = g.gainNominal;
-          row[`${label} reale`] = g.gainReal;
+          row[`${label} nominale`] = scenario.gainNominal;
+          row[`${label} reale`] = scenario.gainReal;
         }
       });
       rows.push(row);
     }
     return rows;
-  }, [scenarioYears, price, downPct, tan, gross, tax, infl, initialCapital, cois, investInitial, investMonthly]);
+  }, [scenarioYears, price, downPaymentRatio, annualInterestRate, grossReturnRate, taxRate, inflationRate, initialCapital, monthlyContribution, investInitial, investMonthly]);
 
-  const better = scenarioStats.map(({ s }) =>
-    minGainPct > 0 ? s.gainReal >= s.principal * minGainPct : s.gainReal >= 0
+  const better = scenarioStats.map(({ scenario }) =>
+    minimumGainPercentage > 0
+      ? scenario.gainReal >= scenario.principal * minimumGainPercentage
+      : scenario.gainReal >= 0
   );
 
-  const targetPct = minGainPct > 0 ? minGainPct : 0;
-  const diffs = scenarioStats.map(({ s }) => ({
-    diffPct: s.principal > 0 ? s.gainReal / s.principal - targetPct : 0,
-    diffAmt: s.gainReal - s.principal * targetPct,
+  const targetPct = minimumGainPercentage > 0 ? minimumGainPercentage : 0;
+  const diffs = scenarioStats.map(({ scenario }) => ({
+    diffPct: scenario.principal > 0 ? scenario.gainReal / scenario.principal - targetPct : 0,
+    diffAmt: scenario.gainReal - scenario.principal * targetPct,
   }));
 
     const titleColor = step >= 5 ? "text-white" : "text-slate-800";
-    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && cois > 0);
+    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyContribution > 0);
 
     const resetAll = () => {
       setPrice(150000);
-      setDownPct(0.15);
+      setDownPaymentRatio(0.15);
       setScenarioYears([20]);
       setInitialCapital(150000 * (1 - 0.15));
-      setTan(0.03);
-      setInfl(0.02);
-      setTax(0.26);
-      setGross(0.05);
-      setCois(0);
+      setAnnualInterestRate(0.03);
+      setInflationRate(0.02);
+      setTaxRate(0.26);
+      setGrossReturnRate(0.05);
+      setMonthlyContribution(0);
       setInvestInitial(true);
       setInvestMonthly(true);
       setSalary(30000);
-      setMinGainPct(0.1);
+      setMinimumGainPercentage(0.1);
     };
 
     const applyConfig = (cfg) => {
@@ -346,40 +368,40 @@ export default function App(){
         case 1:
           setScenarioYears([15, 25]);
           setInitialCapital(0);
-          setCois(0);
+          setMonthlyContribution(0);
           setInvestInitial(false);
           setInvestMonthly(false);
           break;
         case 2:
           setScenarioYears([10, 20, 30]);
           setInitialCapital(0);
-          setCois(300);
+          setMonthlyContribution(300);
           setInvestInitial(false);
           setInvestMonthly(false);
           break;
         case 3:
           setScenarioYears([15, 25, 35]);
           setInitialCapital(0);
-          setCois(300);
+          setMonthlyContribution(300);
           setInvestInitial(false);
           setInvestMonthly(true);
           break;
         case 4:
           setPrice(150000);
-          setDownPct(0);
+          setDownPaymentRatio(0);
           setScenarioYears([20, 40]);
           setInitialCapital(150000);
-          setCois(0);
+          setMonthlyContribution(0);
           setInvestInitial(true);
           setInvestMonthly(false);
           break;
         case 5:
           setPrice(0);
-          setDownPct(0);
-          setTan(0);
+          setDownPaymentRatio(0);
+          setAnnualInterestRate(0);
           setScenarioYears([20]);
           setInitialCapital(10000);
-          setCois(300);
+          setMonthlyContribution(300);
           setInvestInitial(true);
           setInvestMonthly(true);
           break;
@@ -393,7 +415,7 @@ export default function App(){
         setLoading(true);
         setTimeout(()=>{setLoading(false); setStep(5);},2000);
       };
-      const principal = price * (1 - downPct);
+      const principal = price * (1 - downPaymentRatio);
       if(principal <= 0){
         setPopup({
           message: "L'importo del mutuo è 0; i risultati mostreranno solo l'investimento.",
@@ -402,7 +424,7 @@ export default function App(){
         });
         return;
       }
-      if((!investInitial || initialCapital<=0) && (!investMonthly || cois<=0)){
+      if((!investInitial || initialCapital<=0) && (!investMonthly || monthlyContribution<=0)){
         setPopup({
           message: "Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.",
           onConfirm: () => { setPopup(null); proceed(); },
@@ -560,8 +582,8 @@ export default function App(){
                   <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
                   <Grid>
                     <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
-                    <DownPaymentField price={price} downPct={downPct} setDownPct={setDownPct} mode={downMode} setMode={setDownMode} />
-                    <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={tan*100} onChange={(v)=>setTan(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                    <DownPaymentField price={price} downPaymentRatio={downPaymentRatio} setDownPaymentRatio={setDownPaymentRatio} mode={downMode} setMode={setDownMode} />
+                    <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={annualInterestRate*100} onChange={(v)=>setAnnualInterestRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
               </div>
@@ -634,8 +656,8 @@ export default function App(){
                   <h3 className="text-md font-medium mb-2">Risorse</h3>
                   <Grid>
                     <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                    <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={cois} onChange={setCois} min={0} max={50000} step={50} suffix="€" />
-                    <Field label="Inflazione (%)" description="Inflazione prevista" value={infl*100} onChange={(v)=>setInfl(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                    <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={monthlyContribution} onChange={setMonthlyContribution} min={0} max={50000} step={50} suffix="€" />
+                    <Field label="Inflazione (%)" description="Inflazione prevista" value={inflationRate*100} onChange={(v)=>setInflationRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
               </div>
@@ -665,13 +687,13 @@ export default function App(){
                     <Card>
                       <h3 className="text-md font-medium mb-2">Rendimento</h3>
                       <Grid>
-                        <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={gross*100} onChange={(v)=>setGross(v/100)} min={0} max={20} step={0.1} suffix="%" />
-                        <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={tax*100} onChange={(v)=>setTax(v/100)} min={0} max={43} step={1} suffix="%" />
+                        <Field label="Rendimento lordo (%)" description="Rendimento annuo lordo previsto" value={grossReturnRate*100} onChange={(v)=>setGrossReturnRate(v/100)} min={0} max={20} step={0.1} suffix="%" />
+                        <Field label="Tasse rendimenti (%)" description="Aliquota fiscale sui profitti" value={taxRate*100} onChange={(v)=>setTaxRate(v/100)} min={0} max={43} step={1} suffix="%" />
                       </Grid>
                     </Card>
                     <Card>
                       <h3 className="text-md font-medium mb-2">Obiettivo</h3>
-                      <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minGainPct*100} onChange={(v)=>setMinGainPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                      <Field label="Soglia guadagno minimo (in % rispetto al prezzo della casa, 0=disattiva)" description="Percentuale minima di guadagno desiderata" value={minimumGainPercentage*100} onChange={(v)=>setMinimumGainPercentage(v/100)} min={0} max={100} step={1} suffix="%" />
                     </Card>
                     <Card>
                       <h3 className="text-md font-medium mb-2">Indicatore</h3>
@@ -693,7 +715,7 @@ export default function App(){
             {!loading && step===5 && (
               <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
                 <h2 className="text-lg font-medium">Here we go!</h2>
-                <Recap price={price} downPct={downPct} tan={tan} scenarioYears={scenarioYears} initialCapital={initialCapital} cois={cois} infl={infl} gross={gross} tax={tax} investInitial={investInitial} investMonthly={investMonthly} minGainPct={minGainPct} salary={salary} />
+                <Recap price={price} downPaymentRatio={downPaymentRatio} annualInterestRate={annualInterestRate} scenarioYears={scenarioYears} initialCapital={initialCapital} monthlyContribution={monthlyContribution} inflationRate={inflationRate} grossReturnRate={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} minimumGainPercentage={minimumGainPercentage} salary={salary} />
                 <div className="text-xs text-slate-500">
                   <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
                 </div>
@@ -702,9 +724,9 @@ export default function App(){
                 )}
                 {hasInvestment ? (
                   <>
-                    {scenarioStats.map(({ years, s, be, payTime, label }, idx) => {
-                      const finalNom = s.fvNominal + (price > 0 ? price : 0);
-                      const finalReal = s.fvReal + (price > 0 ? price / Math.pow(1 + infl, years) : 0);
+                    {scenarioStats.map(({ years, scenario, breakEven, payOffTimeYears, label }, idx) => {
+                      const finalNom = scenario.fvNominal + (price > 0 ? price : 0);
+                      const finalReal = scenario.fvReal + (price > 0 ? price / Math.pow(1 + inflationRate, years) : 0);
                       return (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">{price>0 ? `Mutuo ${years} anni` : `Investimento ${years} anni`}</h3>
@@ -713,19 +735,19 @@ export default function App(){
                             <div>
                               <div className="text-xs font-semibold text-slate-600 mb-2">Mutuo</div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
-                                <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
+                                <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${formatCurrencyWithCents(scenario.payment)} / mese`} />
                                 <DataCard
                                   icon={ArrowDownCircle}
                                   iconClass="text-red-500"
                                   label="Interessi"
                                   items={[
-                                    { label: "Nominali", value: fmt(s.interestNominal) },
-                                    { label: "Reali", value: fmt(s.interestReal) },
+                                    { label: "Nominali", value: formatCurrency(scenario.interestNominal) },
+                                    { label: "Reali", value: formatCurrency(scenario.interestReal) },
                                   ]}
                                 />
-                                <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
+                                <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payOffTimeYears) ? `${payOffTimeYears.toFixed(1)} anni` : `> ${years} anni`} />
                               </div>
-                              <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                              <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} />
                             </div>
                           )}
                           <div>
@@ -736,8 +758,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Valore finale"
                                 items={[
-                                  { label: "Nominale", value: fmt(s.fvNominal) },
-                                  { label: "Reale", value: fmt(s.fvReal) },
+                                  { label: "Nominale", value: formatCurrency(scenario.fvNominal) },
+                                  { label: "Reale", value: formatCurrency(scenario.fvReal) },
                                 ]}
                               />
                               <DataCard
@@ -745,14 +767,14 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Guadagno"
                                 items={[
-                                  { label: "Nominale", value: fmt(s.gainNominal) },
-                                  { label: "Reale", value: fmt(s.gainReal) },
+                                  { label: "Nominale", value: formatCurrency(scenario.gainNominal) },
+                                  { label: "Reale", value: formatCurrency(scenario.gainReal) },
                                 ]}
                               />
-                              <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? pct(s.gainReal/salary) : "–"} />
-                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={pct(s.gainReal/price)} />}
-                              <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (s.gainReal/(salary/12)).toFixed(1) : "–"} />
-                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={pct(be)} />}
+                              <DataCard icon={Percent} iconClass="text-slate-500" label="% stipendio annuo" value={salary>0 ? formatPercentage(scenario.gainReal/salary) : "–"} />
+                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="% prezzo casa" value={formatPercentage(scenario.gainReal/price)} />}
+                              <DataCard icon={Clock} iconClass="text-slate-500" label="Mesi di lavoro equivalenti" value={salary>0 ? (scenario.gainReal/(salary/12)).toFixed(1) : "–"} />
+                              {price > 0 && <DataCard icon={Percent} iconClass="text-slate-500" label="Break-even lordo" value={formatPercentage(breakEven)} />}
                             </div>
                           </div>
                           <div className="flex flex-col items-center">
@@ -763,8 +785,8 @@ export default function App(){
                               iconClass="text-emerald-600"
                               label="Capitale finale"
                               items={[
-                                { label: "Nominale", value: fmt(finalNom) },
-                                { label: "Reale", value: fmt(finalReal) },
+                                { label: "Nominale", value: formatCurrency(finalNom) },
+                                { label: "Reale", value: formatCurrency(finalReal) },
                               ]}
                             />
                           </div>
@@ -785,7 +807,7 @@ export default function App(){
                               <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                                 <XAxis dataKey="r" tickFormatter={(v) => `${v}%`} />
                                 <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                                <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Rendimento lordo ${l}%`} />
+                                <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Rendimento lordo ${l}%`} />
                                 <Legend />
                                 <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
                                 {scenarioStats.map(({ label }, idx) => (
@@ -806,7 +828,7 @@ export default function App(){
                               <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                                 <XAxis dataKey="year" />
                                 <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                                <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
+                                <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
                                 <Legend />
                                 <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
                                 {scenarioStats.map(({ label }, idx) => (
@@ -831,7 +853,7 @@ export default function App(){
                             <LineChart data={yearlyData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                               <XAxis dataKey="year" />
                               <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                              <Tooltip formatter={(v) => fmt(v)} labelFormatter={(l) => `Anno ${l}`} />
+                              <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
                               <Legend />
                               <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
                               {scenarioStats.map(({ label }, idx) => (
@@ -849,7 +871,7 @@ export default function App(){
                     <Card>
                       <h2 className="text-lg font-medium mb-2">Conclusione</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {scenarioStats.map(({ label, s, be }, idx) => (
+                        {scenarioStats.map(({ label, scenario, breakEven }, idx) => (
                           <div key={label} className="rounded-xl border border-slate-200 p-4 bg-white">
                             <div className="flex items-center justify-between mb-2">
                               <div className="font-semibold">{label}</div>
@@ -858,21 +880,21 @@ export default function App(){
                               </span>
                             </div>
                             <ul className="text-sm text-slate-600 space-y-1">
-                              <li>% stipendio annuo: <b>{salary > 0 ? pct(s.gainReal / salary) : "–"}</b></li>
-                              {price > 0 && <li>% prezzo casa: <b>{pct(s.gainReal / price)}</b></li>}
-                              <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (s.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
-                              <li>Break-even lordo: <b>{pct(be)}</b></li>
-                              <li>Guadagno reale stimato: <b>{fmt(s.gainReal)}</b></li>
-                              <li>Interessi reali: <b>{fmt(s.interestReal)}</b></li>
+                              <li>% stipendio annuo: <b>{salary > 0 ? formatPercentage(scenario.gainReal / salary) : "–"}</b></li>
+                              {price > 0 && <li>% prezzo casa: <b>{formatPercentage(scenario.gainReal / price)}</b></li>}
+                              <li>Mesi di lavoro equivalenti: <b>{salary > 0 ? (scenario.gainReal / (salary / 12)).toFixed(1) : "–"}</b></li>
+                              <li>Break-even lordo: <b>{formatPercentage(breakEven)}</b></li>
+                              <li>Guadagno reale stimato: <b>{formatCurrency(scenario.gainReal)}</b></li>
+                              <li>Interessi reali: <b>{formatCurrency(scenario.interestReal)}</b></li>
                               <li>
-                                {minGainPct > 0 ? (
-                                  <>Scostamento dalla % attesa: <b>{pct(diffs[idx].diffPct)}</b> ({fmt(diffs[idx].diffAmt)})</>
+                                {minimumGainPercentage > 0 ? (
+                                  <>Scostamento dalla % attesa: <b>{formatPercentage(diffs[idx].diffPct)}</b> ({formatCurrency(diffs[idx].diffAmt)})</>
                                 ) : (
-                                  <>Scostamento dallo smenarci: <b>{pct(diffs[idx].diffPct)}</b> ({fmt(diffs[idx].diffAmt)})</>
+                                  <>Scostamento dallo smenarci: <b>{formatPercentage(diffs[idx].diffPct)}</b> ({formatCurrency(diffs[idx].diffAmt)})</>
                                 )}
                               </li>
                             </ul>
-                            <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minGainPct>0 && ` e il guadagno supera il ${pct(minGainPct)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
+                            <p className="text-xs text-slate-500 mt-2">Regola pratica: se il rendimento lordo atteso supera il break-even{minimumGainPercentage>0 && ` e il guadagno supera il ${formatPercentage(minimumGainPercentage)} del mutuo`} e tolleri la volatilità, ha senso il mutuo. Altrimenti meglio pagare cash.</p>
                           </div>
                         ))}
                       </div>
@@ -880,27 +902,27 @@ export default function App(){
                   </>
                 ) : (
                   <>
-                    {scenarioStats.map(({ years, s, payTime }, idx) => {
-                      const finalNom = s.fvNominal + price;
-                      const finalReal = s.fvReal + price / Math.pow(1 + infl, years);
+                    {scenarioStats.map(({ years, scenario, payOffTimeYears }, idx) => {
+                      const finalNom = scenario.fvNominal + price;
+                      const finalReal = scenario.fvReal + price / Math.pow(1 + inflationRate, years);
                       return (
                       <Card key={idx}>
                         <h3 className="text-md font-medium mb-2">Mutuo {years} anni</h3>
                         <div className="mt-4">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-                            <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${fmt2(s.payment)} / mese`} />
+                                <DataCard icon={Wallet} iconClass="text-red-500" label="Rata" value={`${formatCurrencyWithCents(scenario.payment)} / mese`} />
                             <DataCard
                               icon={ArrowDownCircle}
                               iconClass="text-red-500"
                               label="Interessi"
                               items={[
-                                { label: "Nominali", value: fmt(s.interestNominal) },
-                                { label: "Reali", value: fmt(s.interestReal) },
+                                { label: "Nominali", value: formatCurrency(scenario.interestNominal) },
+                                { label: "Reali", value: formatCurrency(scenario.interestReal) },
                               ]}
                             />
-                            <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payTime) ? `${payTime.toFixed(1)} anni` : `> ${years} anni`} />
+                            <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payOffTimeYears) ? `${payOffTimeYears.toFixed(1)} anni` : `> ${years} anni`} />
                           </div>
-                          <AmortizationTable principal={s.principal} annualRate={tan} years={years} initial={initialCapital} monthly={cois} grossReturn={gross} taxRate={tax} investInitial={investInitial} investMonthly={investMonthly} />
+                          <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} />
                           <div className="mt-4">
                             <div className="text-xs font-semibold text-slate-600 mb-2">Capitale finale</div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -909,8 +931,8 @@ export default function App(){
                                 iconClass="text-emerald-600"
                                 label="Capitale finale"
                                 items={[
-                                { label: "Nominale", value: fmt(finalNom) },
-                                { label: "Reale", value: fmt(finalReal) },
+                                { label: "Nominale", value: formatCurrency(finalNom) },
+                                { label: "Reale", value: formatCurrency(finalReal) },
                                 ]}
                               />
                             </div>

@@ -7,13 +7,13 @@ import React, { useState } from "react";
 test("switches mode and updates value", async () => {
   const user = userEvent.setup();
   function Wrapper() {
-    const [pct, setPct] = useState(0.1);
+    const [downPaymentRatio, setDownPaymentRatio] = useState(0.1);
     const [mode, setMode] = useState("pct");
     return (
       <DownPaymentField
         price={100}
-        downPct={pct}
-        setDownPct={setPct}
+        downPaymentRatio={downPaymentRatio}
+        setDownPaymentRatio={setDownPaymentRatio}
         mode={mode}
         setMode={setMode}
       />

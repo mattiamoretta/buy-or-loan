@@ -1,3 +1,15 @@
-export const fmt = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-export const fmt2 = (n) => n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
-export const pct = (n) => `${(n * 100).toFixed(2)}%`;
+export const formatCurrency = (value) =>
+  value.toLocaleString("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  });
+
+export const formatCurrencyWithCents = (value) =>
+  value.toLocaleString("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 2,
+  });
+
+export const formatPercentage = (ratio) => `${(ratio * 100).toFixed(2)}%`;

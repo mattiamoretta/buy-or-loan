@@ -26,15 +26,15 @@ export default function Field({ label, value, onChange, min, max, step, prefix, 
           inputMode="decimal"
           className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
           value={display}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === "") {
+          onChange={(event) => {
+            const inputValue = event.target.value;
+            if (inputValue === "") {
               setDisplay("");
               onChange(0);
             } else {
-              const num = parseNumber(val);
-              setDisplay(fmtNumber(num));
-              onChange(num);
+              const parsedValue = parseNumber(inputValue);
+              setDisplay(fmtNumber(parsedValue));
+              onChange(parsedValue);
             }
           }}
           min={min}

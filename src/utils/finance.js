@@ -1,111 +1,223 @@
-export function pmt(principal, annualRate, years){
-  if(principal === 0) return 0;
-  const r = annualRate/12; const n = years*12;
-  if(r === 0) return principal/n;
-  return (principal*r)/(1-Math.pow(1+r,-n));
+export function calculateMonthlyPayment(principal, annualRate, years) {
+  if (principal === 0) return 0;
+  const monthlyRate = annualRate / 12;
+  const totalMonths = years * 12;
+  if (monthlyRate === 0) return principal / totalMonths;
+  return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -totalMonths));
 }
 
-export function investFV({ initial=0, monthly=0, grossReturn=0, taxRate=0, years=0, investInitial=true, investMonthly=true }){
-  const rNet = grossReturn * (1 - taxRate);
-  const rm = rNet / 12;
-  const months = Math.round(years * 12);
-  let v = investInitial ? initial : 0;
-  let saved = investInitial ? 0 : initial;
-  for (let m = 1; m <= months; m++) {
-    v = v * (1 + rm);
-    if (investMonthly) v += monthly; else saved += monthly;
+export function calculateInvestmentFutureValue({
+  initial = 0,
+  monthly = 0,
+  grossReturn = 0,
+  taxRate = 0,
+  years = 0,
+  investInitial = true,
+  investMonthly = true,
+}) {
+  const netAnnualReturn = grossReturn * (1 - taxRate);
+  const monthlyReturnRate = netAnnualReturn / 12;
+  const totalMonths = Math.round(years * 12);
+  let investmentValue = investInitial ? initial : 0;
+  let savedAmount = investInitial ? 0 : initial;
+  for (let month = 1; month <= totalMonths; month++) {
+    investmentValue = investmentValue * (1 + monthlyReturnRate);
+    if (investMonthly) investmentValue += monthly; else savedAmount += monthly;
   }
-  return v + saved;
+  return investmentValue + savedAmount;
 }
 
-export function mortgageCosts({ principal, annualRate, years, inflation }){
-  const n = years * 12;
-  const im = inflation / 12;
-  const payment = pmt(principal, annualRate, years);
-  const totalPaid = payment * n;
+export function calculateMortgageCosts({ principal, annualRate, years, inflation }) {
+  const totalMonths = years * 12;
+  const monthlyInflation = inflation / 12;
+  const payment = calculateMonthlyPayment(principal, annualRate, years);
+  const totalPaid = payment * totalMonths;
   const interestNominal = totalPaid - principal;
-  let pvPayments = 0;
-  for (let m = 1; m <= n; m++) pvPayments += payment / Math.pow(1 + im, m);
-  const interestReal = pvPayments - principal;
+  let presentValuePayments = 0;
+  for (let month = 1; month <= totalMonths; month++) {
+    presentValuePayments += payment / Math.pow(1 + monthlyInflation, month);
+  }
+  const interestReal = presentValuePayments - principal;
   return { payment, totalPaid, interestNominal, interestReal };
 }
 
-export function scenarioGain({ price, downPct, tan, years, grossReturn, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
-  const principal = price * (1 - downPct);
-  const fvNominal = investFV({ initial: initialCapital, monthly: monthlyExtra, grossReturn, taxRate, years, investInitial, investMonthly });
-  const { interestNominal, interestReal, payment } = mortgageCosts({ principal, annualRate: tan, years, inflation });
-  const fvReal = fvNominal / Math.pow(1 + inflation, years);
-  const totalContrib = (investInitial ? initialCapital : 0) + (investMonthly ? monthlyExtra * years * 12 : 0);
-  const gainNominal = fvNominal - totalContrib - interestNominal;
-  const gainReal = fvReal - totalContrib - interestReal;
-  return { principal, initialCapital, payment, fvNominal, fvReal, interestNominal, interestReal, gainNominal, gainReal };
+export function calculateScenarioGain({
+  price,
+  downPaymentRatio,
+  annualRate,
+  years,
+  grossReturnRate,
+  taxRate,
+  inflationRate,
+  initialCapital,
+  monthlyContribution = 0,
+  investInitial = true,
+  investMonthly = true,
+}) {
+  const principal = price * (1 - downPaymentRatio);
+  const futureValueNominal = calculateInvestmentFutureValue({
+    initial: initialCapital,
+    monthly: monthlyContribution,
+    grossReturn: grossReturnRate,
+    taxRate,
+    years,
+    investInitial,
+    investMonthly,
+  });
+  const {
+    interestNominal,
+    interestReal,
+    payment,
+  } = calculateMortgageCosts({ principal, annualRate, years, inflation: inflationRate });
+  const futureValueReal = futureValueNominal / Math.pow(1 + inflationRate, years);
+  const totalContributions =
+    (investInitial ? initialCapital : 0) +
+    (investMonthly ? monthlyContribution * years * 12 : 0);
+  const gainNominal = futureValueNominal - totalContributions - interestNominal;
+  const gainReal = futureValueReal - totalContributions - interestReal;
+  return {
+    principal,
+    initialCapital,
+    payment,
+    fvNominal: futureValueNominal,
+    fvReal: futureValueReal,
+    interestNominal,
+    interestReal,
+    gainNominal,
+    gainReal,
+  };
 }
 
-export function breakEvenGross({ price, downPct, tan, years, taxRate, inflation, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
-  let lo=0, hi=0.2; // 0..20% lordo
-  for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2; const g=scenarioGain({ price, downPct, tan, years, grossReturn: mid, taxRate, inflation, initialCapital, monthlyExtra, investInitial, investMonthly }).gainReal;
-    if(g>=0) hi=mid; else lo=mid;
+export function calculateBreakEvenGrossReturn({
+  price,
+  downPaymentRatio,
+  annualRate,
+  years,
+  taxRate,
+  inflationRate,
+  initialCapital,
+  monthlyContribution = 0,
+  investInitial = true,
+  investMonthly = true,
+}) {
+  let lowerBound = 0;
+  let upperBound = 0.2; // 0..20% gross return
+  for (let i = 0; i < 60; i++) {
+    const midPoint = (lowerBound + upperBound) / 2;
+    const gain = calculateScenarioGain({
+      price,
+      downPaymentRatio,
+      annualRate,
+      years,
+      grossReturnRate: midPoint,
+      taxRate,
+      inflationRate,
+      initialCapital,
+      monthlyContribution,
+      investInitial,
+      investMonthly,
+    }).gainReal;
+    if (gain >= 0) upperBound = midPoint; else lowerBound = midPoint;
   }
-  return (lo+hi)/2;
+  return (lowerBound + upperBound) / 2;
 }
 
-export function mortgageBalance({ principal, annualRate, years, afterYears }){
-  const payment = pmt(principal, annualRate, years);
-  const r = annualRate/12; const t = Math.round(afterYears*12);
-  if(r === 0) {
-    const bal = principal - payment * t;
-    return Math.max(0, bal);
+export function calculateMortgageBalance({ principal, annualRate, years, afterYears }) {
+  const payment = calculateMonthlyPayment(principal, annualRate, years);
+  const monthlyRate = annualRate / 12;
+  const monthsElapsed = Math.round(afterYears * 12);
+  if (monthlyRate === 0) {
+    const balance = principal - payment * monthsElapsed;
+    return Math.max(0, balance);
   }
-  const bal = principal*Math.pow(1+r, t) - payment*((Math.pow(1+r, t)-1)/r);
-  return Math.max(0, bal);
+  const balance =
+    principal * Math.pow(1 + monthlyRate, monthsElapsed) -
+    payment * ((Math.pow(1 + monthlyRate, monthsElapsed) - 1) / monthlyRate);
+  return Math.max(0, balance);
 }
 
-export function amortizationSchedule({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
-  const payment = pmt(principal, annualRate, years);
-  const r = annualRate / 12;
-  const rm = grossReturn * (1 - taxRate) / 12;
-  const n = Math.round(years * 12);
+export function generateAmortizationSchedule({
+  principal,
+  annualRate,
+  years,
+  initial = 0,
+  monthly = 0,
+  grossReturn = 0,
+  taxRate = 0,
+  investInitial = true,
+  investMonthly = true,
+}) {
+  const payment = calculateMonthlyPayment(principal, annualRate, years);
+  const monthlyRate = annualRate / 12;
+  const monthlyReturnRate = (grossReturn * (1 - taxRate)) / 12;
+  const totalMonths = Math.round(years * 12);
   let balance = principal;
   let paidPrincipal = 0;
-  let v = investInitial ? initial : 0;
-  let saved = investInitial ? 0 : initial;
+  let investmentValue = investInitial ? initial : 0;
+  let savedAmount = investInitial ? 0 : initial;
   let payoffMonth = null;
   const rows = [];
-  for (let m = 1; m <= n; m++) {
-    const interest = balance * r;
+  for (let month = 1; month <= totalMonths; month++) {
+    const interest = balance * monthlyRate;
     const capital = payment - interest;
     balance = Math.max(0, balance - capital);
     paidPrincipal += capital;
 
-    v = v * (1 + rm);
-    if (investMonthly) v += monthly; else saved += monthly;
-    const available = v + saved;
-    if (payoffMonth === null && available >= balance) payoffMonth = m;
+    investmentValue = investmentValue * (1 + monthlyReturnRate);
+    if (investMonthly) investmentValue += monthly; else savedAmount += monthly;
+    const available = investmentValue + savedAmount;
+    if (payoffMonth === null && available >= balance) payoffMonth = month;
 
-    rows.push({ month: m, interest, capital, balance, paidPrincipal, available });
+    rows.push({ month, interest, capital, balance, paidPrincipal, available });
   }
   return { rows, payoffMonth };
 }
 
-export function payOffTime({ price, downPct, tan, years, grossReturn, taxRate, initialCapital, monthlyExtra=0, investInitial=true, investMonthly=true }){
-  const principal = price*(1-downPct);
-  const initialInvest = initialCapital;
+export function calculatePayOffTime({
+  price,
+  downPaymentRatio,
+  annualRate,
+  years,
+  grossReturnRate,
+  taxRate,
+  initialCapital,
+  monthlyContribution = 0,
+  investInitial = true,
+  investMonthly = true,
+}) {
+  const principal = price * (1 - downPaymentRatio);
+  const initialInvestment = initialCapital;
 
-  function totalSaved(y){
-    return investFV({ initial: initialInvest, monthly: monthlyExtra, grossReturn, taxRate, years: y, investInitial, investMonthly });
+  function totalSavedAt(yearsElapsed) {
+    return calculateInvestmentFutureValue({
+      initial: initialInvestment,
+      monthly: monthlyContribution,
+      grossReturn: grossReturnRate,
+      taxRate,
+      years: yearsElapsed,
+      investInitial,
+      investMonthly,
+    });
   }
 
-  function balance(y){
-    return mortgageBalance({ principal, annualRate: tan, years, afterYears: y });
+  function remainingBalanceAt(yearsElapsed) {
+    return calculateMortgageBalance({
+      principal,
+      annualRate,
+      years,
+      afterYears: yearsElapsed,
+    });
   }
 
-  if(totalSaved(years) < balance(years)) return Infinity;
+  if (totalSavedAt(years) < remainingBalanceAt(years)) return Infinity;
 
-  let lo=0, hi=years;
-  for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2;
-    if(totalSaved(mid) >= balance(mid)) hi=mid; else lo=mid;
+  let lowerBound = 0;
+  let upperBound = years;
+  for (let i = 0; i < 60; i++) {
+    const midPoint = (lowerBound + upperBound) / 2;
+    if (totalSavedAt(midPoint) >= remainingBalanceAt(midPoint)) upperBound = midPoint;
+    else lowerBound = midPoint;
   }
-  return (lo+hi)/2;
+  return (lowerBound + upperBound) / 2;
 }
+

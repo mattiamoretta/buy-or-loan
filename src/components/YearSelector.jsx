@@ -10,19 +10,19 @@ export default function YearSelector({ label, value, onChange, description }) {
     <div className="flex flex-col gap-1">
       <label className="text-sm text-slate-600">{label}</label>
       <div className="flex items-center gap-2 flex-wrap">
-        {presets.map((p) => (
+        {presets.map((presetYear) => (
           <button
-            key={p}
+            key={presetYear}
             type="button"
             className={`px-3 py-1 rounded-lg text-sm ${
-              !custom && value === p ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
+              !custom && value === presetYear ? "bg-orange-600 text-white" : "bg-slate-200 text-slate-600"
             }`}
             onClick={() => {
-              onChange(p);
+              onChange(presetYear);
               setCustom(false);
             }}
           >
-            {p}
+            {presetYear}
           </button>
         ))}
         <button
