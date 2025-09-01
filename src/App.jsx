@@ -765,7 +765,7 @@ export default function App(){
                     />
                     <ConfigCard
                       icon={PiggyBank}
-                      title="Stai valutando un mutuo con risparmi mensili?"
+                      title="Stai valutando un mutuo per chiuderlo anticipatamente?"
                       description="Valuta quando chiudere il mutuo risparmiando 300€ al mese senza investire. Durate 10-20-30 anni."
                       details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
                       onSteps={() => {
@@ -783,7 +783,7 @@ export default function App(){
                     />
                     <ConfigCard
                       icon={Wallet}
-                      title="Stai valutando un mutuo con risparmi mensili da investire?"
+                      title="Stai valutando un mutuo per chiuderlo anticipatamente, investendo nel mentre i risparmi accumulati?"
                       description="Valuta quando chiudere il mutuo investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
                       details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
                       onSteps={() => {
