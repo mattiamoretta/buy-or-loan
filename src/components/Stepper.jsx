@@ -1,7 +1,6 @@
 import React from "react";
 
-export default function Stepper({ step }) {
-  const labels = ["Scenari", "Mutuo", "Patrimonio", "Investimenti", "Risultati"];
+export default function Stepper({ step, labels }) {
   const isFinal = step === labels.length;
   return (
     <div className="flex items-center mb-8">
