@@ -22,24 +22,26 @@ import Checkbox from "./components/Checkbox";
 import DownPaymentField from "./components/DownPaymentField";
 import KPICard from "./components/KPICard";
 import Stepper from "./components/Stepper";
+import LanguageSelector from "./components/LanguageSelector";
+import { STEP_LABELS, STEP_DESCRIPTIONS, UI_TEXTS, CONFIG_TEXTS } from "./constants/texts";
 
 // -------------------- UI helpers --------------------
 function Card({ children }){ return <motion.div layout className="bg-white rounded-2xl shadow p-5 border border-slate-200">{children}</motion.div>; }
 function Grid({ children }){ return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">{children}</div>; }
-function Popup({ message, onConfirm, onCancel }){
+function Popup({ message, onConfirm, onCancel, texts }){
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white p-6 rounded-xl shadow max-w-sm text-center space-y-4">
         <p className="text-sm">{message}</p>
         <div className="flex justify-center gap-3">
           {onCancel && (
-            <button onClick={onCancel} className="px-4 py-2 rounded-xl border">Annulla</button>
+            <button onClick={onCancel} className="px-4 py-2 rounded-xl border">{texts.cancel}</button>
           )}
           <button
             onClick={onConfirm}
             className="px-4 py-2 bg-orange-600 text-white rounded-xl"
           >
-            {onCancel ? "Prosegui" : "OK"}
+            {onCancel ? texts.proceed : texts.ok}
           </button>
         </div>
       </div>
@@ -47,7 +49,7 @@ function Popup({ message, onConfirm, onCancel }){
   );
 }
 
-function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onResults }) {
+function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onResults, texts }) {
   return (
     <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
       {Icon ? (
@@ -74,7 +76,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
             onClick={onSteps}
             className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm"
           >
-            Vedi step
+            {texts.seeSteps}
           </button>
         )}
         {onResults && (
@@ -82,7 +84,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
             onClick={onResults}
             className="px-3 py-1 bg-orange-600 text-white rounded-xl text-sm"
           >
-            Risultati
+            {texts.results}
           </button>
         )}
       </div>
@@ -90,7 +92,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
   );
 }
 
-function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true }) {
+function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0, grossReturn=0, taxRate=0, investInitial=true, investMonthly=true, texts }) {
   const { rows, payoffMonth } = useMemo(() => generateAmortizationSchedule({ principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly }), [principal, annualRate, years, initial, monthly, grossReturn, taxRate, investInitial, investMonthly]);
   const showSavings = initial > 0 || monthly > 0;
   const containerRef = useRef(null);
@@ -105,20 +107,20 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   }, [rows, payoffMonth]);
   return (
     <details className="mt-4" open>
-      <summary className="cursor-pointer text-sm text-orange-600">Andamento mutuo</summary>
+      <summary className="cursor-pointer text-sm text-orange-600">{texts.heading}</summary>
       {showSavings && payoffMonth && (
-        <p className="text-xs text-slate-500 mt-1">La riga in verde indica la prima rata in cui i risparmi coprono il residuo del mutuo.</p>
+        <p className="text-xs text-slate-500 mt-1">{texts.payoffNote}</p>
       )}
       <div ref={containerRef} className="overflow-x-auto max-h-64 overflow-y-auto mt-2">
         <table className="min-w-full text-xs tabular-nums">
           <thead className="bg-slate-100 sticky top-0 z-10">
             <tr>
-              <th className="px-2 py-1 text-left">Mese</th>
-              <th className="px-2 py-1 text-right">Interessi</th>
-              <th className="px-2 py-1 text-right">Capitale</th>
-              <th className="px-2 py-1 text-right">Residuo</th>
-              <th className="px-2 py-1 text-right">Capitale tot.</th>
-              {showSavings && <th className="px-2 py-1 text-right">Disp. potenziale</th>}
+              <th className="px-2 py-1 text-left">{texts.month}</th>
+              <th className="px-2 py-1 text-right">{texts.interest}</th>
+              <th className="px-2 py-1 text-right">{texts.principal}</th>
+              <th className="px-2 py-1 text-right">{texts.balance}</th>
+              <th className="px-2 py-1 text-right">{texts.totalPrincipal}</th>
+              {showSavings && <th className="px-2 py-1 text-right">{texts.savings}</th>}
             </tr>
           </thead>
           <tbody>
@@ -143,28 +145,28 @@ function AmortizationTable({ principal, annualRate, years, initial=0, monthly=0,
   );
 }
 
-function Recap({ price, downPaymentRatio, annualInterestRate, scenarioYears, initialCapital, monthlyContribution, inflationRate, grossReturnRate, taxRate, investInitial, investMonthly, minimumGainPercentage, salary }){
+function Recap({ price, downPaymentRatio, annualInterestRate, scenarioYears, initialCapital, monthlyContribution, inflationRate, grossReturnRate, taxRate, investInitial, investMonthly, minimumGainPercentage, salary, texts }){
   return (
     <details className="mb-4">
-      <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">Riepilogo dati</summary>
+      <summary className="cursor-pointer text-sm text-white bg-orange-600 px-2 py-1 rounded">{texts.heading}</summary>
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-orange-50 p-2 rounded">
-        {price > 0 && <span>Prezzo casa: <b>{formatCurrency(price)}</b></span>}
-        <span>Anticipo: <b>{formatCurrency(price * downPaymentRatio)} ({formatPercentage(downPaymentRatio)})</b></span>
-        <span>TAN: <b>{formatPercentage(annualInterestRate)}</b></span>
-        <span>Durate scenari: <b>{scenarioYears.join(', ')} anni</b></span>
-        <span>Capitale iniziale: <b>{formatCurrency(initialCapital)}</b></span>
-        <span>Disponibilità mensile: <b>{formatCurrency(monthlyContribution)}</b></span>
-        <span>Inflazione: <b>{formatPercentage(inflationRate)}</b></span>
+        {price > 0 && <span>{texts.price}: <b>{formatCurrency(price)}</b></span>}
+        <span>{texts.downPayment}: <b>{formatCurrency(price * downPaymentRatio)} ({formatPercentage(downPaymentRatio)})</b></span>
+        <span>{texts.annualRate}: <b>{formatPercentage(annualInterestRate)}</b></span>
+        <span>{texts.scenarioDurations}: <b>{scenarioYears.join(', ')} anni</b></span>
+        <span>{texts.initialCapital}: <b>{formatCurrency(initialCapital)}</b></span>
+        <span>{texts.monthlyContribution}: <b>{formatCurrency(monthlyContribution)}</b></span>
+        <span>{texts.inflation}: <b>{formatPercentage(inflationRate)}</b></span>
         {(investInitial || investMonthly) && (
           <>
-            <span>Rendimento lordo: <b>{formatPercentage(grossReturnRate)}</b></span>
-            <span>Tasse rendimenti: <b>{formatPercentage(taxRate)}</b></span>
+            <span>{texts.grossReturn}: <b>{formatPercentage(grossReturnRate)}</b></span>
+            <span>{texts.taxRate}: <b>{formatPercentage(taxRate)}</b></span>
           </>
         )}
-        <span>Investi capitale iniziale: <b>{investInitial ? 'Sì' : 'No'}</b></span>
-        <span>Investi disponibilità mensile: <b>{investMonthly ? 'Sì' : 'No'}</b></span>
-        <span>Soglia guadagno minimo: <b>{formatPercentage(minimumGainPercentage)}</b></span>
-        <span>Stipendio netto annuo: <b>{formatCurrency(salary)}</b></span>
+        <span>{texts.investInitial}: <b>{investInitial ? texts.yes : texts.no}</b></span>
+        <span>{texts.investMonthly}: <b>{investMonthly ? texts.yes : texts.no}</b></span>
+        <span>{texts.minimumGain}: <b>{formatPercentage(minimumGainPercentage)}</b></span>
+        <span>{texts.salary}: <b>{formatCurrency(salary)}</b></span>
       </div>
     </details>
   );
@@ -176,6 +178,7 @@ export default function App(){
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState(null);
+  const [language, setLanguage] = useState("it");
 
   const backgrounds = [
     'from-orange-50 via-amber-50 to-yellow-50',
@@ -418,17 +421,19 @@ export default function App(){
       const principal = price * (1 - downPaymentRatio);
       if(principal <= 0){
         setPopup({
-          message: "L'importo del mutuo è 0; i risultati mostreranno solo l'investimento.",
+          message: UI_TEXTS[language].messages.noLoan,
           onConfirm: () => { setPopup(null); proceed(); },
           onCancel: () => setPopup(null),
+          texts: UI_TEXTS[language].popup,
         });
         return;
       }
       if((!investInitial || initialCapital<=0) && (!investMonthly || monthlyContribution<=0)){
         setPopup({
-          message: "Nessun investimento sarà applicato; i risultati mostreranno solo l'evoluzione del mutuo.",
+          message: UI_TEXTS[language].messages.noInvestment,
           onConfirm: () => { setPopup(null); proceed(); },
           onCancel: () => setPopup(null),
+          texts: UI_TEXTS[language].popup,
         });
         return;
       }
@@ -438,13 +443,14 @@ export default function App(){
   return (
     <div className={`min-h-screen bg-gradient-to-br ${backgrounds[step]} animate-gradient text-slate-800`}>
       {popup && <Popup {...popup} />}
+      <LanguageSelector language={language} setLanguage={setLanguage} />
       <div className="max-w-5xl mx-auto p-6">
         <header className="flex items-center justify-center gap-3 mb-6">
           <Calculator className="w-7 h-7 text-orange-600" />
           <h1 className={`text-2xl md:text-3xl font-semibold ${titleColor}`}>The wise investor's wizard 🚀</h1>
         </header>
 
-        {step > 0 && <Stepper step={step} />}
+        {step > 0 && <Stepper step={step} labels={STEP_LABELS[language]} />}
 
         <AnimatePresence mode="wait">
           {loading && (
@@ -462,19 +468,20 @@ export default function App(){
 
           {!loading && step===0 && (
             <motion.div key="landing" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-              <p className="text-center text-lg text-slate-700">Simula e confronta mutuo e investimento per trovare la strategia migliore.</p>
+              <p className="text-center text-lg text-slate-700">{UI_TEXTS[language].landing.tagline}</p>
               <div className="text-center">
-                <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">Inizia</button>
+                <button onClick={()=>{resetAll(); setStep(1);}} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-lg shadow">{UI_TEXTS[language].landing.start}</button>
               </div>
-              <h2 className="text-xl font-semibold text-center">Oppure scegli un esempio</h2>
+              <h2 className="text-xl font-semibold text-center">{UI_TEXTS[language].landing.chooseExample}</h2>
               <div className="space-y-4">
-                <ExampleGroup title="Mutuo">
+                <ExampleGroup title={UI_TEXTS[language].landing.mortgage}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
                       icon={Home}
-                      title="Stai valutando un mutuo?"
-                      description="Scopri l'andamento del debito. Es: mutuo €150k, anticipo 15% con durate 15-25 anni."
-                      details={["Mutuo €150k", "Anticipo 15%"]}
+                      title={CONFIG_TEXTS[language][0].title}
+                      description={CONFIG_TEXTS[language][0].description}
+                      details={CONFIG_TEXTS[language][0].details}
                       onSteps={() => {
                         applyConfig(1);
                         setStep(1);
@@ -489,10 +496,11 @@ export default function App(){
                       }}
                     />
                     <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
                       icon={PiggyBank}
-                      title="Stai valutando un mutuo per chiuderlo anticipatamente?"
-                      description="Valuta quando chiudere il mutuo risparmiando 300€ al mese senza investire. Durate 10-20-30 anni."
-                      details={["Mutuo €150k", "Anticipo 15%", "Risparmi 300€/mese"]}
+                      title={CONFIG_TEXTS[language][1].title}
+                      description={CONFIG_TEXTS[language][1].description}
+                      details={CONFIG_TEXTS[language][1].details}
                       onSteps={() => {
                         applyConfig(2);
                         setStep(1);
@@ -507,10 +515,11 @@ export default function App(){
                       }}
                     />
                     <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
                       icon={Wallet}
-                      title="Stai valutando un mutuo per chiuderlo anticipatamente, investendo nel mentre i risparmi accumulati?"
-                      description="Valuta quando chiudere il mutuo investendo 300€ al mese con rendimenti attesi del 5%. Durate 15-25-35 anni."
-                      details={["Mutuo €150k", "Anticipo 15%", "Investi 300€/mese", "Rendimento atteso 5%"]}
+                      title={CONFIG_TEXTS[language][2].title}
+                      description={CONFIG_TEXTS[language][2].description}
+                      details={CONFIG_TEXTS[language][2].details}
                       onSteps={() => {
                         applyConfig(3);
                         setStep(1);
@@ -526,13 +535,14 @@ export default function App(){
                     />
                   </div>
                 </ExampleGroup>
-                <ExampleGroup title="Investimento">
+                <ExampleGroup title={UI_TEXTS[language].landing.investment}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
                       icon={TrendingUp}
-                      title="Stai valutando un investimento?"
-                      description="Simula un investimento senza mutuo: €10k iniziali e 300€/mese per 20 anni."
-                      details={["Capitale iniziale €10k", "Versamento 300€/mese"]}
+                      title={CONFIG_TEXTS[language][3].title}
+                      description={CONFIG_TEXTS[language][3].description}
+                      details={CONFIG_TEXTS[language][3].details}
                       onSteps={() => {
                         applyConfig(5);
                         setStep(1);
@@ -548,13 +558,14 @@ export default function App(){
                     />
                   </div>
                 </ExampleGroup>
-                <ExampleGroup title="Mutuo vs pagamento">
+                <ExampleGroup title={UI_TEXTS[language].landing.mortgageVsCash}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
                       icon={WalletCards}
-                      title="Stai valutando se accendere un mutuo avendo già il capitale necessario?"
-                      description="Hai €150k disponibili: meglio pagare cash o accendere un mutuo e investirli? Confronta durate 20 e 40 anni."
-                      details={["Mutuo €150k", "Anticipo 0%", "Capitale investito €150k", "Rendimento atteso 5%"]}
+                      title={CONFIG_TEXTS[language][4].title}
+                      description={CONFIG_TEXTS[language][4].description}
+                      details={CONFIG_TEXTS[language][4].details}
                       onSteps={() => {
                         applyConfig(4);
                         setStep(1);
@@ -576,22 +587,23 @@ export default function App(){
 
           {!loading && step===2 && (
             <motion.div key="s2" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 2 – Mutuo</h2>
+              <h2 className="text-lg font-medium">{`Step 2 – ${STEP_LABELS[language][1]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][1]}</p>
               <div className="space-y-3">
                 <Card>
-                  <h3 className="text-md font-medium mb-2">Valori del mutuo</h3>
+                  <h3 className="text-md font-medium mb-2">{UI_TEXTS[language].step2.mortgageValues}</h3>
                   <Grid>
-                    <Field label="Importo considerato (€)" description="Prezzo dell'immobile da finanziare" value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
+                    <Field label={UI_TEXTS[language].step2.priceLabel} description={UI_TEXTS[language].step2.priceDesc} value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
                     <DownPaymentField price={price} downPaymentRatio={downPaymentRatio} setDownPaymentRatio={setDownPaymentRatio} mode={downMode} setMode={setDownMode} />
-                    <Field label="TAN (%)" description="Tasso annuo nominale del mutuo" value={annualInterestRate*100} onChange={(v)=>setAnnualInterestRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                    <Field label={UI_TEXTS[language].step2.tanLabel} description={UI_TEXTS[language].step2.tanDesc} value={annualInterestRate*100} onChange={(v)=>setAnnualInterestRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
                   </Grid>
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
-                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                  <button onClick={()=>setStep(3)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -599,17 +611,18 @@ export default function App(){
 
           {!loading && step===1 && (
             <motion.div key="s1" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 1 – Scenari</h2>
+              <h2 className="text-lg font-medium">{`Step 1 – ${STEP_LABELS[language][0]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][0]}</p>
               <div className="space-y-3">
                 <Card>
-                  <h3 className="text-md font-medium mb-2">Scenari</h3>
-                  <p className="text-sm text-slate-600 mb-2">Durata del mutuo e dell'investimento</p>
+                  <h3 className="text-md font-medium mb-2">{UI_TEXTS[language].step1.heading}</h3>
+                  <p className="text-sm text-slate-600 mb-2">{UI_TEXTS[language].step1.subheading}</p>
                   <div className="flex flex-col gap-3">
                     {scenarioYears.map((y, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <YearSelector
-                          label={`Durata scenario ${i + 1} (anni)`}
-                          description={`Durata del confronto ${i + 1}`}
+                          label={UI_TEXTS[language].step1.durationLabel.replace('{n}', i + 1)}
+                          description={UI_TEXTS[language].step1.durationDesc.replace('{n}', i + 1)}
                           value={y}
                           onChange={(v) => {
                             const arr = [...scenarioYears];
@@ -633,16 +646,16 @@ export default function App(){
                       onClick={() => setScenarioYears([...scenarioYears, 20])}
                       className="self-start px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm"
                     >
-                      Aggiungi scenario
+                      {UI_TEXTS[language].step1.addScenario}
                     </button>
                   </div>
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(0)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
-                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                  <button onClick={()=>setStep(2)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -650,7 +663,8 @@ export default function App(){
 
           {!loading && step===3 && (
             <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 3 – Patrimonio</h2>
+              <h2 className="text-lg font-medium">{`Step 3 – ${STEP_LABELS[language][2]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][2]}</p>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Risorse</h3>
@@ -662,10 +676,10 @@ export default function App(){
                 </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
-                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                  <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -673,7 +687,8 @@ export default function App(){
 
           {!loading && step===4 && (
             <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">Step 4 – Investimenti</h2>
+              <h2 className="text-lg font-medium">{`Step 4 – ${STEP_LABELS[language][3]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][3]}</p>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
@@ -703,10 +718,10 @@ export default function App(){
                 )}
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">Indietro</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
-                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">Vedi risultati <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -714,8 +729,9 @@ export default function App(){
 
             {!loading && step===5 && (
               <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-                <h2 className="text-lg font-medium">Here we go!</h2>
-                <Recap price={price} downPaymentRatio={downPaymentRatio} annualInterestRate={annualInterestRate} scenarioYears={scenarioYears} initialCapital={initialCapital} monthlyContribution={monthlyContribution} inflationRate={inflationRate} grossReturnRate={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} minimumGainPercentage={minimumGainPercentage} salary={salary} />
+                <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
+                <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
+                <Recap price={price} downPaymentRatio={downPaymentRatio} annualInterestRate={annualInterestRate} scenarioYears={scenarioYears} initialCapital={initialCapital} monthlyContribution={monthlyContribution} inflationRate={inflationRate} grossReturnRate={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} minimumGainPercentage={minimumGainPercentage} salary={salary} texts={UI_TEXTS[language].recap} />
                 <div className="text-xs text-slate-500">
                   <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
                 </div>
@@ -747,7 +763,7 @@ export default function App(){
                                 />
                                 <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payOffTimeYears) ? `${payOffTimeYears.toFixed(1)} anni` : `> ${years} anni`} />
                               </div>
-                              <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} />
+                              <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} texts={UI_TEXTS[language].amortization} />
                             </div>
                           )}
                           <div>
@@ -922,7 +938,7 @@ export default function App(){
                             />
                             <DataCard icon={Clock} iconClass="text-slate-500" label="Anno chiusura mutuo" value={isFinite(payOffTimeYears) ? `${payOffTimeYears.toFixed(1)} anni` : `> ${years} anni`} />
                           </div>
-                          <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} />
+                          <AmortizationTable principal={scenario.principal} annualRate={annualInterestRate} years={years} initial={initialCapital} monthly={monthlyContribution} grossReturn={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} texts={UI_TEXTS[language].amortization} />
                           <div className="mt-4">
                             <div className="text-xs font-semibold text-slate-600 mb-2">Capitale finale</div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -943,13 +959,13 @@ export default function App(){
                     })}
                   </>
                 )}
-              <div className="flex justify-end">
-                <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">Esporta / Salva PDF</button>
-              </div>
-              <div className="flex justify-between">
-                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">Indietro</button>
-                <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">Ricomincia</button>
-              </div>
+                <div className="flex justify-end">
+                  <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">{UI_TEXTS[language].navigation.export}</button>
+                </div>
+                <div className="flex justify-between">
+                  <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                </div>
             </motion.div>
           )}
         </AnimatePresence>
