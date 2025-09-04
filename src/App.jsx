@@ -49,9 +49,14 @@ function Popup({ message, onConfirm, onCancel, texts }){
   );
 }
 
-function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onResults, texts }) {
+function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onResults, texts, badge }) {
   return (
-    <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2">
+    <div className="rounded-2xl p-5 shadow bg-gradient-to-br from-orange-50 to-amber-100 border border-orange-200 flex flex-col gap-2 relative">
+      {badge && (
+        <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-xs px-2 py-1 rounded-full">
+          {badge}
+        </span>
+      )}
       {Icon ? (
         <div className="flex items-center gap-3">
           <Icon className="w-8 h-8 text-orange-600" />
@@ -398,6 +403,20 @@ export default function App(){
 
     const applyConfig = (cfg) => {
       switch (cfg) {
+        case 0:
+          setScenarioYears([20, 30]);
+          setInitialCapital(0);
+          setMonthlyContribution(0);
+          setInvestInitial(false);
+          setInvestMonthly(false);
+          setEnableEnergy(true);
+          setSolarCost(8000);
+          setAnnualElectricCost(1200);
+          setSolarSavingsPct(0.6);
+          setBoilerCost(4000);
+          setAnnualHeatingCost(800);
+          setBoilerSavingsPct(0.5);
+          break;
         case 1:
           setScenarioYears([15, 25]);
           setInitialCapital(0);
@@ -445,8 +464,7 @@ export default function App(){
 
     const handleInvestNext = () => {
       const proceed = () => {
-        setLoading(true);
-        setTimeout(()=>{setLoading(false); setStep(enableEnergy ? 5 : 6);},2000);
+        setStep(5);
       };
       const principal = price * (1 - downPaymentRatio);
       if(principal <= 0){
@@ -468,6 +486,11 @@ export default function App(){
         return;
       }
       proceed();
+    };
+
+    const handleEnergyNext = () => {
+      setLoading(true);
+      setTimeout(()=>{setLoading(false); setStep(6);},2000);
     };
 
   return (
@@ -508,10 +531,30 @@ export default function App(){
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
-                      icon={Home}
+                      icon={Sun}
+                      badge="NEW"
                       title={CONFIG_TEXTS[language][0].title}
                       description={CONFIG_TEXTS[language][0].description}
                       details={CONFIG_TEXTS[language][0].details}
+                      onSteps={() => {
+                        applyConfig(0);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(0);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(6);
+                        }, 2000);
+                      }}
+                    />
+                    <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
+                      icon={Home}
+                      title={CONFIG_TEXTS[language][1].title}
+                      description={CONFIG_TEXTS[language][1].description}
+                      details={CONFIG_TEXTS[language][1].details}
                       onSteps={() => {
                         applyConfig(1);
                         setStep(1);
@@ -528,9 +571,9 @@ export default function App(){
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
                       icon={PiggyBank}
-                      title={CONFIG_TEXTS[language][1].title}
-                      description={CONFIG_TEXTS[language][1].description}
-                      details={CONFIG_TEXTS[language][1].details}
+                      title={CONFIG_TEXTS[language][2].title}
+                      description={CONFIG_TEXTS[language][2].description}
+                      details={CONFIG_TEXTS[language][2].details}
                       onSteps={() => {
                         applyConfig(2);
                         setStep(1);
@@ -547,9 +590,9 @@ export default function App(){
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
                       icon={Wallet}
-                      title={CONFIG_TEXTS[language][2].title}
-                      description={CONFIG_TEXTS[language][2].description}
-                      details={CONFIG_TEXTS[language][2].details}
+                      title={CONFIG_TEXTS[language][3].title}
+                      description={CONFIG_TEXTS[language][3].description}
+                      details={CONFIG_TEXTS[language][3].details}
                       onSteps={() => {
                         applyConfig(3);
                         setStep(1);
@@ -570,9 +613,9 @@ export default function App(){
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
                       icon={TrendingUp}
-                      title={CONFIG_TEXTS[language][3].title}
-                      description={CONFIG_TEXTS[language][3].description}
-                      details={CONFIG_TEXTS[language][3].details}
+                      title={CONFIG_TEXTS[language][4].title}
+                      description={CONFIG_TEXTS[language][4].description}
+                      details={CONFIG_TEXTS[language][4].details}
                       onSteps={() => {
                         applyConfig(5);
                         setStep(1);
@@ -593,9 +636,9 @@ export default function App(){
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
                       icon={WalletCards}
-                      title={CONFIG_TEXTS[language][4].title}
-                      description={CONFIG_TEXTS[language][4].description}
-                      details={CONFIG_TEXTS[language][4].details}
+                      title={CONFIG_TEXTS[language][5].title}
+                      description={CONFIG_TEXTS[language][5].description}
+                      details={CONFIG_TEXTS[language][5].details}
                       onSteps={() => {
                         applyConfig(4);
                         setStep(1);
@@ -746,16 +789,12 @@ export default function App(){
                     </Card>
                   </>
                 )}
-                <Card>
-                  <h3 className="text-md font-medium mb-2">Migliorie energetiche (opzionale)</h3>
-                  <Checkbox label="Considera pannelli solari e caldaia" checked={enableEnergy} onChange={setEnableEnergy} />
-                </Card>
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
-                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation[enableEnergy ? 'next' : 'viewResults']} <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
@@ -767,27 +806,34 @@ export default function App(){
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
               <div className="space-y-3">
                 <Card>
-                  <h3 className="text-md font-medium mb-2">Impianto fotovoltaico</h3>
-                  <Grid>
-                    <Field label="Costo pannelli (€)" description="Prezzo comprensivo di installazione" value={solarCost} onChange={setSolarCost} min={0} max={500000} step={100} suffix="€" />
-                    <Field label="Spesa elettrica annua (€)" description="Costo annuo dell'energia" value={annualElectricCost} onChange={setAnnualElectricCost} min={0} max={50000} step={100} suffix="€" />
-                    <Field label="Copertura solare (%)" description="Quota della bolletta coperta dai pannelli" value={solarSavingsPct*100} onChange={(v)=>setSolarSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                  </Grid>
+                  <Checkbox label="Considera pannelli solari e caldaia" checked={enableEnergy} onChange={setEnableEnergy} />
                 </Card>
-                <Card>
-                  <h3 className="text-md font-medium mb-2">Caldaia</h3>
-                  <Grid>
-                    <Field label="Costo caldaia (€)" description="Prezzo comprensivo di installazione" value={boilerCost} onChange={setBoilerCost} min={0} max={500000} step={100} suffix="€" />
-                    <Field label="Spesa riscaldamento annua (€)" description="Costo annuo attuale del riscaldamento" value={annualHeatingCost} onChange={setAnnualHeatingCost} min={0} max={50000} step={100} suffix="€" />
-                    <Field label="Riduzione spesa (%)" description="Risparmio atteso con la nuova caldaia" value={boilerSavingsPct*100} onChange={(v)=>setBoilerSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                  </Grid>
-                </Card>
+                {enableEnergy && (
+                  <>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Impianto fotovoltaico</h3>
+                      <Grid>
+                        <Field label="Costo pannelli (€)" description="Prezzo comprensivo di installazione" value={solarCost} onChange={setSolarCost} min={0} max={500000} step={100} suffix="€" />
+                        <Field label="Spesa elettrica annua (€)" description="Costo annuo dell'energia" value={annualElectricCost} onChange={setAnnualElectricCost} min={0} max={50000} step={100} suffix="€" />
+                        <Field label="Copertura solare (%)" description="Quota della bolletta coperta dai pannelli" value={solarSavingsPct*100} onChange={(v)=>setSolarSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                      </Grid>
+                    </Card>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Caldaia</h3>
+                      <Grid>
+                        <Field label="Costo caldaia (€)" description="Prezzo comprensivo di installazione" value={boilerCost} onChange={setBoilerCost} min={0} max={500000} step={100} suffix="€" />
+                        <Field label="Spesa riscaldamento annua (€)" description="Costo annuo attuale del riscaldamento" value={annualHeatingCost} onChange={setAnnualHeatingCost} min={0} max={50000} step={100} suffix="€" />
+                        <Field label="Riduzione spesa (%)" description="Risparmio atteso con la nuova caldaia" value={boilerSavingsPct*100} onChange={(v)=>setBoilerSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                      </Grid>
+                    </Card>
+                  </>
+                )}
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
-                  <button onClick={()=>setStep(6)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={handleEnergyNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
             </motion.div>
@@ -1078,7 +1124,7 @@ export default function App(){
                   <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">{UI_TEXTS[language].navigation.export}</button>
                 </div>
                 <div className="flex justify-between">
-                  <button onClick={()=>setStep(enableEnergy ? 5 : 4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
+                  <button onClick={()=>setStep(5)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                 </div>
             </motion.div>
