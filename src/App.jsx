@@ -299,14 +299,30 @@ export default function App(){
     const boilerYearly = annualHeatingCost * boilerSavingsPct;
     return scenarioYears.map((years) => ({
       years,
-      solarPayback: solarYearly > 0 ? solarCost / solarYearly : Infinity,
+      solarBreakEven: solarYearly > 0 ? solarCost / solarYearly : Infinity,
       solarGain: solarYearly * years - solarCost,
-      boilerPayback: boilerYearly > 0 ? boilerCost / boilerYearly : Infinity,
+      boilerBreakEven: boilerYearly > 0 ? boilerCost / boilerYearly : Infinity,
       boilerGain: boilerYearly * years - boilerCost,
     }));
   }, [enableEnergy, annualElectricCost, solarSavingsPct, solarCost, annualHeatingCost, boilerSavingsPct, boilerCost, scenarioYears]);
 
-  const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"]; 
+  const energyChartData = useMemo(() => {
+    if (!enableEnergy) return [];
+    const maxY = Math.max(...scenarioYears);
+    const rows = [];
+    const solarYearly = annualElectricCost * solarSavingsPct;
+    const boilerYearly = annualHeatingCost * boilerSavingsPct;
+    for (let y = 1; y <= maxY; y++) {
+      rows.push({
+        year: y,
+        ...(solarCost > 0 ? { "Pannelli solari": solarYearly * y - solarCost } : {}),
+        ...(boilerCost > 0 ? { Caldaia: boilerYearly * y - boilerCost } : {}),
+      });
+    }
+    return rows;
+  }, [enableEnergy, scenarioYears, annualElectricCost, solarSavingsPct, solarCost, annualHeatingCost, boilerSavingsPct, boilerCost]);
+
+  const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"];
 
   const chartData = useMemo(() => {
     const rows = [];
@@ -924,28 +940,51 @@ export default function App(){
                     })}
 
                     {enableEnergy && (
-                      <Card>
-                        <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                        {energyStats.map(({ years, solarPayback, solarGain, boilerPayback, boilerGain }) => (
-                          <div key={years} className="mb-4">
-                            <div className="font-semibold mb-2">Scenario {years} anni</div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {solarCost>0 && (
-                                <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
-                                  { label: "Payback", value: isFinite(solarPayback) ? `${solarPayback.toFixed(1)} anni` : `> ${years} anni` },
-                                  { label: "Guadagno", value: formatCurrency(solarGain) },
-                                ]} />
-                              )}
-                              {boilerCost>0 && (
-                                <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
-                                  { label: "Payback", value: isFinite(boilerPayback) ? `${boilerPayback.toFixed(1)} anni` : `> ${years} anni` },
-                                  { label: "Guadagno", value: formatCurrency(boilerGain) },
-                                ]} />
-                              )}
+                      <>
+                        <Card>
+                          <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
+                          {energyStats.map(({ years, solarBreakEven, solarGain, boilerBreakEven, boilerGain }) => (
+                            <div key={years} className="mb-4">
+                              <div className="font-semibold mb-2">Scenario {years} anni</div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {solarCost>0 && (
+                                  <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
+                                    { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                    { label: "Guadagno", value: formatCurrency(solarGain) },
+                                  ]} />
+                                )}
+                                {boilerCost>0 && (
+                                  <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
+                                    { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                    { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                  ]} />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </Card>
+                          ))}
+                        </Card>
+                        {energyChartData.length > 0 && (
+                          <Card>
+                            <div className="flex items-center gap-2 mb-3">
+                              <TrendingUp className="w-5 h-5" />
+                              <h2 className="text-lg font-medium">Guadagno energia nel tempo</h2>
+                            </div>
+                            <div className="h-72">
+                              <ResponsiveContainer>
+                                <LineChart data={energyChartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                                  <XAxis dataKey="year" />
+                                  <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                                  <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
+                                  <Legend />
+                                  <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                                  {solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
+                                  {boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </Card>
+                        )}
+                      </>
                     )}
 
                     {price > 0 ? (
@@ -1095,28 +1134,51 @@ export default function App(){
                       );
                     })}
                     {enableEnergy && (
-                      <Card>
-                        <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                        {energyStats.map(({ years, solarPayback, solarGain, boilerPayback, boilerGain }) => (
-                          <div key={years} className="mb-4">
-                            <div className="font-semibold mb-2">Scenario {years} anni</div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {solarCost>0 && (
-                                <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
-                                  { label: "Payback", value: isFinite(solarPayback) ? `${solarPayback.toFixed(1)} anni` : `> ${years} anni` },
-                                  { label: "Guadagno", value: formatCurrency(solarGain) },
-                                ]} />
-                              )}
-                              {boilerCost>0 && (
-                                <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
-                                  { label: "Payback", value: isFinite(boilerPayback) ? `${boilerPayback.toFixed(1)} anni` : `> ${years} anni` },
-                                  { label: "Guadagno", value: formatCurrency(boilerGain) },
-                                ]} />
-                              )}
+                      <>
+                        <Card>
+                          <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
+                          {energyStats.map(({ years, solarBreakEven, solarGain, boilerBreakEven, boilerGain }) => (
+                            <div key={years} className="mb-4">
+                              <div className="font-semibold mb-2">Scenario {years} anni</div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {solarCost>0 && (
+                                  <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
+                                    { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                    { label: "Guadagno", value: formatCurrency(solarGain) },
+                                  ]} />
+                                )}
+                                {boilerCost>0 && (
+                                  <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
+                                    { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                    { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                  ]} />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </Card>
+                          ))}
+                        </Card>
+                        {energyChartData.length > 0 && (
+                          <Card>
+                            <div className="flex items-center gap-2 mb-3">
+                              <TrendingUp className="w-5 h-5" />
+                              <h2 className="text-lg font-medium">Guadagno energia nel tempo</h2>
+                            </div>
+                            <div className="h-72">
+                              <ResponsiveContainer>
+                                <LineChart data={energyChartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                                  <XAxis dataKey="year" />
+                                  <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                                  <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
+                                  <Legend />
+                                  <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                                  {solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
+                                  {boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </Card>
+                        )}
+                      </>
                     )}
                   </>
                 )}
