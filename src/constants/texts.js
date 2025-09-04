@@ -1,6 +1,6 @@
 export const STEP_LABELS = {
-  it: ["Scenari", "Mutuo", "Patrimonio", "Investimenti", "Risultati"],
-  en: ["Scenarios", "Mortgage", "Assets", "Investments", "Results"],
+  it: ["Scenari", "Mutuo", "Patrimonio", "Investimenti", "Energia", "Risultati"],
+  en: ["Scenarios", "Mortgage", "Assets", "Investments", "Energy", "Results"],
 };
 
 export const STEP_DESCRIPTIONS = {
@@ -9,6 +9,7 @@ export const STEP_DESCRIPTIONS = {
     "Configura il tuo mutuo: i dettagli che ti porteranno alla casa dei tuoi sogni.",
     "Fotografa il tuo patrimonio iniziale, il punto di partenza per costruire il futuro.",
     "Definisci la strategia d'investimento per far crescere i tuoi risparmi.",
+    "Valuta interventi energetici come pannelli solari e caldaia.",
     "Scopri i risultati: l'epilogo del tuo percorso tra mutuo e investimenti.",
   ],
   en: [
@@ -16,6 +17,7 @@ export const STEP_DESCRIPTIONS = {
     "Configure your mortgage: the details that lead you to your dream home.",
     "Capture your starting assets, the launch pad for building your future.",
     "Define your investment strategy to grow your savings.",
+    "Evaluate energy improvements like solar panels and boiler.",
     "Explore the results: the conclusion of your path between loan and investments.",
   ],
 };

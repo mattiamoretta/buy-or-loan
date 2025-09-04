@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards, ArrowDownCircle, ArrowUpCircle, Clock, Percent } from "lucide-react";
+import { Calculator, TrendingUp, ArrowRight, Home, PiggyBank, Wallet, WalletCards, ArrowDownCircle, ArrowUpCircle, Clock, Percent, Sun, Flame } from "lucide-react";
 import DataCard from "./components/DataCard";
 import ExampleGroup from "./components/ExampleGroup";
 
@@ -174,7 +174,7 @@ function Recap({ price, downPaymentRatio, annualInterestRate, scenarioYears, ini
 
 // -------------------- App --------------------
 export default function App(){
-  // Wizard: 0..5 (0 = landing)
+  // Wizard: 0..6 (0 = landing)
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState(null);
@@ -187,6 +187,7 @@ export default function App(){
     'from-orange-300 via-amber-300 to-yellow-300',
     'from-orange-400 via-amber-400 to-yellow-400',
     'from-orange-500 via-amber-500 to-yellow-500',
+    'from-orange-600 via-amber-600 to-yellow-600',
   ];
 
   // Base
@@ -210,6 +211,15 @@ export default function App(){
   // Patrimonio
   const [salary, setSalary] = useState(30000);
   const [minimumGainPercentage, setMinimumGainPercentage] = useState(0.1);
+
+  // Energia
+  const [enableEnergy, setEnableEnergy] = useState(false);
+  const [solarCost, setSolarCost] = useState(0);
+  const [annualElectricCost, setAnnualElectricCost] = useState(0);
+  const [solarSavingsPct, setSolarSavingsPct] = useState(0.5);
+  const [boilerCost, setBoilerCost] = useState(0);
+  const [annualHeatingCost, setAnnualHeatingCost] = useState(0);
+  const [boilerSavingsPct, setBoilerSavingsPct] = useState(0.5);
 
   // Calcoli
   const scenarioStats = useMemo(
@@ -277,6 +287,19 @@ export default function App(){
       investMonthly,
     ]
   );
+
+  const energyStats = useMemo(() => {
+    if (!enableEnergy) return [];
+    const solarYearly = annualElectricCost * solarSavingsPct;
+    const boilerYearly = annualHeatingCost * boilerSavingsPct;
+    return scenarioYears.map((years) => ({
+      years,
+      solarPayback: solarYearly > 0 ? solarCost / solarYearly : Infinity,
+      solarGain: solarYearly * years - solarCost,
+      boilerPayback: boilerYearly > 0 ? boilerCost / boilerYearly : Infinity,
+      boilerGain: boilerYearly * years - boilerCost,
+    }));
+  }, [enableEnergy, annualElectricCost, solarSavingsPct, solarCost, annualHeatingCost, boilerSavingsPct, boilerCost, scenarioYears]);
 
   const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"]; 
 
@@ -347,7 +370,7 @@ export default function App(){
     diffAmt: scenario.gainReal - scenario.principal * targetPct,
   }));
 
-    const titleColor = step >= 5 ? "text-white" : "text-slate-800";
+    const titleColor = step >= 6 ? "text-white" : "text-slate-800";
     const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyContribution > 0);
 
     const resetAll = () => {
@@ -364,6 +387,13 @@ export default function App(){
       setInvestMonthly(true);
       setSalary(30000);
       setMinimumGainPercentage(0.1);
+      setEnableEnergy(false);
+      setSolarCost(0);
+      setAnnualElectricCost(0);
+      setSolarSavingsPct(0.5);
+      setBoilerCost(0);
+      setAnnualHeatingCost(0);
+      setBoilerSavingsPct(0.5);
     };
 
     const applyConfig = (cfg) => {
@@ -416,7 +446,7 @@ export default function App(){
     const handleInvestNext = () => {
       const proceed = () => {
         setLoading(true);
-        setTimeout(()=>{setLoading(false); setStep(5);},2000);
+        setTimeout(()=>{setLoading(false); setStep(enableEnergy ? 5 : 6);},2000);
       };
       const principal = price * (1 - downPaymentRatio);
       if(principal <= 0){
@@ -491,7 +521,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(5);
+                          setStep(6);
                         }, 2000);
                       }}
                     />
@@ -510,7 +540,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(5);
+                          setStep(6);
                         }, 2000);
                       }}
                     />
@@ -529,7 +559,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(5);
+                          setStep(6);
                         }, 2000);
                       }}
                     />
@@ -552,7 +582,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(5);
+                          setStep(6);
                         }, 2000);
                       }}
                     />
@@ -575,7 +605,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(5);
+                          setStep(6);
                         }, 2000);
                       }}
                     />
@@ -716,21 +746,57 @@ export default function App(){
                     </Card>
                   </>
                 )}
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Migliorie energetiche (opzionale)</h3>
+                  <Checkbox label="Considera pannelli solari e caldaia" checked={enableEnergy} onChange={setEnableEnergy} />
+                </Card>
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
-                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
+                  <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation[enableEnergy ? 'next' : 'viewResults']} <ArrowRight className="w-4 h-4"/></button>
                 </div>
               </div>
               </motion.div>
           )}
 
-            {!loading && step===5 && (
-              <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-                <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
-                <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
+          {!loading && step===5 && (
+            <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+              <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
+              <div className="space-y-3">
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Impianto fotovoltaico</h3>
+                  <Grid>
+                    <Field label="Costo pannelli (€)" description="Prezzo comprensivo di installazione" value={solarCost} onChange={setSolarCost} min={0} max={500000} step={100} suffix="€" />
+                    <Field label="Spesa elettrica annua (€)" description="Costo annuo dell'energia" value={annualElectricCost} onChange={setAnnualElectricCost} min={0} max={50000} step={100} suffix="€" />
+                    <Field label="Copertura solare (%)" description="Quota della bolletta coperta dai pannelli" value={solarSavingsPct*100} onChange={(v)=>setSolarSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                  </Grid>
+                </Card>
+                <Card>
+                  <h3 className="text-md font-medium mb-2">Caldaia</h3>
+                  <Grid>
+                    <Field label="Costo caldaia (€)" description="Prezzo comprensivo di installazione" value={boilerCost} onChange={setBoilerCost} min={0} max={500000} step={100} suffix="€" />
+                    <Field label="Spesa riscaldamento annua (€)" description="Costo annuo attuale del riscaldamento" value={annualHeatingCost} onChange={setAnnualHeatingCost} min={0} max={50000} step={100} suffix="€" />
+                    <Field label="Riduzione spesa (%)" description="Risparmio atteso con la nuova caldaia" value={boilerSavingsPct*100} onChange={(v)=>setBoilerSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                  </Grid>
+                </Card>
+              </div>
+              <div className="flex justify-between">
+                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
+                <div className="flex gap-2">
+                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
+                  <button onClick={()=>setStep(6)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && step===6 && (
+              <motion.div key="s6" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
+                <h2 className="text-lg font-medium">{`Step 6 – ${STEP_LABELS[language][5]}`}</h2>
+                <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][5]}</p>
                 <Recap price={price} downPaymentRatio={downPaymentRatio} annualInterestRate={annualInterestRate} scenarioYears={scenarioYears} initialCapital={initialCapital} monthlyContribution={monthlyContribution} inflationRate={inflationRate} grossReturnRate={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} minimumGainPercentage={minimumGainPercentage} salary={salary} texts={UI_TEXTS[language].recap} />
                 <div className="text-xs text-slate-500">
                   <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
@@ -810,6 +876,31 @@ export default function App(){
                       </Card>
                       );
                     })}
+
+                    {enableEnergy && (
+                      <Card>
+                        <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
+                        {energyStats.map(({ years, solarPayback, solarGain, boilerPayback, boilerGain }) => (
+                          <div key={years} className="mb-4">
+                            <div className="font-semibold mb-2">Scenario {years} anni</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {solarCost>0 && (
+                                <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
+                                  { label: "Payback", value: isFinite(solarPayback) ? `${solarPayback.toFixed(1)} anni` : `> ${years} anni` },
+                                  { label: "Guadagno", value: formatCurrency(solarGain) },
+                                ]} />
+                              )}
+                              {boilerCost>0 && (
+                                <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
+                                  { label: "Payback", value: isFinite(boilerPayback) ? `${boilerPayback.toFixed(1)} anni` : `> ${years} anni` },
+                                  { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                ]} />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </Card>
+                    )}
 
                     {price > 0 ? (
                       <>
@@ -957,13 +1048,37 @@ export default function App(){
                       </Card>
                       );
                     })}
+                    {enableEnergy && (
+                      <Card>
+                        <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
+                        {energyStats.map(({ years, solarPayback, solarGain, boilerPayback, boilerGain }) => (
+                          <div key={years} className="mb-4">
+                            <div className="font-semibold mb-2">Scenario {years} anni</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {solarCost>0 && (
+                                <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
+                                  { label: "Payback", value: isFinite(solarPayback) ? `${solarPayback.toFixed(1)} anni` : `> ${years} anni` },
+                                  { label: "Guadagno", value: formatCurrency(solarGain) },
+                                ]} />
+                              )}
+                              {boilerCost>0 && (
+                                <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
+                                  { label: "Payback", value: isFinite(boilerPayback) ? `${boilerPayback.toFixed(1)} anni` : `> ${years} anni` },
+                                  { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                ]} />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </Card>
+                    )}
                   </>
                 )}
                 <div className="flex justify-end">
                   <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">{UI_TEXTS[language].navigation.export}</button>
                 </div>
                 <div className="flex justify-between">
-                  <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
+                  <button onClick={()=>setStep(enableEnergy ? 5 : 4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                 </div>
             </motion.div>
