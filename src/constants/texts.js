@@ -145,6 +145,11 @@ export const UI_TEXTS = {
 export const CONFIG_TEXTS = {
   it: [
     {
+      title: "Nuovo! Mutuo con energia",
+      description: "Simula un mutuo considerando pannelli solari e caldaia.",
+      details: ["Mutuo €150k", "Anticipo 15%", "Opzioni energia"],
+    },
+    {
       title: "Stai valutando un mutuo?",
       description: "Scopri l'andamento del debito. Es: mutuo €150k, anticipo 15% con durate 15-25 anni.",
       details: ["Mutuo €150k", "Anticipo 15%"],
@@ -171,6 +176,11 @@ export const CONFIG_TEXTS = {
     },
   ],
   en: [
+    {
+      title: "New! Mortgage with energy",
+      description: "Simulate a mortgage including solar panels and boiler.",
+      details: ["€150k mortgage", "15% down payment", "Energy options"],
+    },
     {
       title: "Are you considering a mortgage?",
       description: "Discover debt progression. E.g., €150k mortgage, 15% down payment with 15-25 year terms.",
