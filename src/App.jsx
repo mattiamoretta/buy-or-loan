@@ -432,7 +432,6 @@ export default function App(){
 
     const resetAll = () => {
       setEnableMortgage(true);
-      setEnableEnergy(false);
       setPrice(150000);
       setDownPaymentRatio(0.15);
       setScenarioYears([20]);
@@ -460,11 +459,9 @@ export default function App(){
       setEnableSolar(false);
       setEnableBoiler(false);
       setEnableMortgage(true);
-      setEnableEnergy(false);
       switch (cfg) {
         case 0:
           setEnableMortgage(false);
-          setEnableEnergy(true);
           setPrice(0);
           setDownPaymentRatio(0);
           setAnnualInterestRate(0);

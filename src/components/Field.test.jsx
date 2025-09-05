@@ -11,9 +11,9 @@ test("formats and parses numbers", async () => {
   expect(screen.getByText("€")).toBeInTheDocument();
   expect(screen.getByText("%"));
   const input = screen.getByRole("textbox");
-  expect(input.value).toBe("1000");
+  expect(input.value).toBe("1.000");
   await user.clear(input);
   await user.type(input, "2000");
   expect(handleChange).toHaveBeenLastCalledWith(2000);
-  expect(input.value).toBe("2000");
+  expect(input.value).toBe("2.000");
 });
