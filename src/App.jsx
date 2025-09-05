@@ -185,6 +185,10 @@ export default function App(){
   const [popup, setPopup] = useState(null);
   const [language, setLanguage] = useState("it");
 
+  // Flags
+  const [enableMortgage, setEnableMortgage] = useState(true);
+  const [enableEnergy, setEnableEnergy] = useState(false);
+
   const backgrounds = [
     'from-orange-50 via-amber-50 to-yellow-50',
     'from-orange-100 via-amber-100 to-yellow-100',
@@ -228,57 +232,61 @@ export default function App(){
   const [boilerSavingsPct, setBoilerSavingsPct] = useState(0.5);
 
   // Calcoli
+  const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyContribution > 0);
   const scenarioStats = useMemo(
     () =>
-      scenarioYears.map((years) => {
-        const scenario = calculateScenarioGain({
-          price,
-          downPaymentRatio,
-          annualRate: annualInterestRate,
-          years,
-          grossReturnRate,
-          taxRate,
-          inflationRate,
-          initialCapital,
-          monthlyContribution,
-          investInitial,
-          investMonthly,
-        });
-        const breakEven = calculateBreakEvenGrossReturn({
-          price,
-          downPaymentRatio,
-          annualRate: annualInterestRate,
-          years,
-          taxRate,
-          inflationRate,
-          initialCapital,
-          monthlyContribution,
-          investInitial,
-          investMonthly,
-        });
-        const payOffTimeYears = calculatePayOffTime({
-          price,
-          downPaymentRatio,
-          annualRate: annualInterestRate,
-          years,
-          grossReturnRate,
-          taxRate,
-          initialCapital,
-          monthlyContribution,
-          investInitial,
-          investMonthly,
-        });
+      (!enableMortgage && !hasInvestment)
+        ? []
+        : scenarioYears.map((years) => {
+          const effectivePrice = enableMortgage ? price : 0;
+          const scenario = calculateScenarioGain({
+            price: effectivePrice,
+            downPaymentRatio,
+            annualRate: annualInterestRate,
+            years,
+            grossReturnRate,
+            taxRate,
+            inflationRate,
+            initialCapital,
+            monthlyContribution,
+            investInitial,
+            investMonthly,
+          });
+          const breakEven = calculateBreakEvenGrossReturn({
+            price: effectivePrice,
+            downPaymentRatio,
+            annualRate: annualInterestRate,
+            years,
+            taxRate,
+            inflationRate,
+            initialCapital,
+            monthlyContribution,
+            investInitial,
+            investMonthly,
+          });
+          const payOffTimeYears = calculatePayOffTime({
+            price: effectivePrice,
+            downPaymentRatio,
+            annualRate: annualInterestRate,
+            years,
+            grossReturnRate,
+            taxRate,
+            initialCapital,
+            monthlyContribution,
+            investInitial,
+            investMonthly,
+          });
         const label = `Scenario ${years} anni`;
-        return {
-          years,
-          scenario,
-          breakEven,
-          payOffTimeYears,
-          label,
-          labelN: `${label} nominale`,
-          labelR: `${label} reale`,
-        };
-      }),
+          return {
+            years,
+            scenario,
+            breakEven,
+            payOffTimeYears,
+            label,
+            labelN: `${label} nominale`,
+            labelR: `${label} reale`,
+          };
+        }),
     [
       scenarioYears,
       price,
@@ -291,6 +299,8 @@ export default function App(){
       monthlyContribution,
       investInitial,
       investMonthly,
+      enableMortgage,
+      hasInvestment,
     ]
   );
 
@@ -419,9 +429,10 @@ export default function App(){
   }));
 
     const titleColor = step >= 6 ? "text-white" : "text-slate-800";
-    const hasInvestment = (investInitial && initialCapital > 0) || (investMonthly && monthlyContribution > 0);
 
     const resetAll = () => {
+      setEnableMortgage(true);
+      setEnableEnergy(false);
       setPrice(150000);
       setDownPaymentRatio(0.15);
       setScenarioYears([20]);
@@ -448,8 +459,12 @@ export default function App(){
     const applyConfig = (cfg) => {
       setEnableSolar(false);
       setEnableBoiler(false);
+      setEnableMortgage(true);
+      setEnableEnergy(false);
       switch (cfg) {
         case 0:
+          setEnableMortgage(false);
+          setEnableEnergy(true);
           setPrice(0);
           setDownPaymentRatio(0);
           setAnnualInterestRate(0);
@@ -498,6 +513,7 @@ export default function App(){
           setInvestMonthly(false);
           break;
         case 5:
+          setEnableMortgage(false);
           setPrice(0);
           setDownPaymentRatio(0);
           setAnnualInterestRate(0);
@@ -514,10 +530,10 @@ export default function App(){
 
     const handleInvestNext = () => {
       const proceed = () => {
-        setStep(5);
+        setStep(enableEnergy ? 5 : 6);
       };
       const principal = price * (1 - downPaymentRatio);
-      if(principal <= 0){
+      if(enableMortgage && principal <= 0){
         setPopup({
           message: UI_TEXTS[language].messages.noLoan,
           onConfirm: () => { setPopup(null); proceed(); },
@@ -526,7 +542,7 @@ export default function App(){
         });
         return;
       }
-      if((!investInitial || initialCapital<=0) && (!investMonthly || monthlyContribution<=0)){
+      if((investInitial && initialCapital<=0) || (investMonthly && monthlyContribution<=0)){
         setPopup({
           message: UI_TEXTS[language].messages.noInvestment,
           onConfirm: () => { setPopup(null); proceed(); },
@@ -577,30 +593,6 @@ export default function App(){
               </div>
               <h2 className="text-xl font-semibold text-center">{UI_TEXTS[language].landing.chooseExample}</h2>
               <div className="space-y-4">
-                <ExampleGroup title={UI_TEXTS[language].landing.energy}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ConfigCard
-                      texts={UI_TEXTS[language].configCard}
-                      icon={Sun}
-                      badge="NEW"
-                      title={CONFIG_TEXTS[language][0].title}
-                      description={CONFIG_TEXTS[language][0].description}
-                      details={CONFIG_TEXTS[language][0].details}
-                      onSteps={() => {
-                        applyConfig(0);
-                        setStep(1);
-                      }}
-                      onResults={() => {
-                        applyConfig(0);
-                        setLoading(true);
-                        setTimeout(() => {
-                          setLoading(false);
-                          setStep(6);
-                        }, 2000);
-                      }}
-                    />
-                  </div>
-                </ExampleGroup>
                 <ExampleGroup title={UI_TEXTS[language].landing.mortgage}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
@@ -708,6 +700,30 @@ export default function App(){
                     />
                   </div>
                 </ExampleGroup>
+                <ExampleGroup title={UI_TEXTS[language].landing.energy}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConfigCard
+                      texts={UI_TEXTS[language].configCard}
+                      icon={Sun}
+                      badge="NEW"
+                      title={CONFIG_TEXTS[language][0].title}
+                      description={CONFIG_TEXTS[language][0].description}
+                      details={CONFIG_TEXTS[language][0].details}
+                      onSteps={() => {
+                        applyConfig(0);
+                        setStep(1);
+                      }}
+                      onResults={() => {
+                        applyConfig(0);
+                        setLoading(true);
+                        setTimeout(() => {
+                          setLoading(false);
+                          setStep(6);
+                        }, 2000);
+                      }}
+                    />
+                  </div>
+                </ExampleGroup>
               </div>
             </motion.div>
           )}
@@ -718,13 +734,18 @@ export default function App(){
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][1]}</p>
               <div className="space-y-3">
                 <Card>
-                  <h3 className="text-md font-medium mb-2">{UI_TEXTS[language].step2.mortgageValues}</h3>
-                  <Grid>
-                    <Field label={UI_TEXTS[language].step2.priceLabel} description={UI_TEXTS[language].step2.priceDesc} value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
-                    <DownPaymentField price={price} downPaymentRatio={downPaymentRatio} setDownPaymentRatio={setDownPaymentRatio} mode={downMode} setMode={setDownMode} />
-                    <Field label={UI_TEXTS[language].step2.tanLabel} description={UI_TEXTS[language].step2.tanDesc} value={annualInterestRate*100} onChange={(v)=>setAnnualInterestRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                  </Grid>
+                  <Checkbox label={UI_TEXTS[language].step2.enableMortgage} checked={enableMortgage} onChange={setEnableMortgage} />
                 </Card>
+                {enableMortgage && (
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">{UI_TEXTS[language].step2.mortgageValues}</h3>
+                    <Grid>
+                      <Field label={UI_TEXTS[language].step2.priceLabel} description={UI_TEXTS[language].step2.priceDesc} value={price} onChange={setPrice} min={0} max={2000000} step={1000} suffix="€" />
+                      <DownPaymentField price={price} downPaymentRatio={downPaymentRatio} setDownPaymentRatio={setDownPaymentRatio} mode={downMode} setMode={setDownMode} />
+                      <Field label={UI_TEXTS[language].step2.tanLabel} description={UI_TEXTS[language].step2.tanDesc} value={annualInterestRate*100} onChange={(v)=>setAnnualInterestRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                    </Grid>
+                  </Card>
+                )}
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
@@ -793,14 +814,16 @@ export default function App(){
               <h2 className="text-lg font-medium">{`Step 3 – ${STEP_LABELS[language][2]}`}</h2>
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][2]}</p>
               <div className="space-y-3">
-                <Card>
-                  <h3 className="text-md font-medium mb-2">Risorse</h3>
-                  <Grid>
-                    <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                    <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={monthlyContribution} onChange={setMonthlyContribution} min={0} max={50000} step={50} suffix="€" />
-                    <Field label="Inflazione (%)" description="Inflazione prevista" value={inflationRate*100} onChange={(v)=>setInflationRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                  </Grid>
-                </Card>
+                {(enableMortgage || investInitial || investMonthly) && (
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Risorse</h3>
+                    <Grid>
+                      <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                      <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={monthlyContribution} onChange={setMonthlyContribution} min={0} max={50000} step={50} suffix="€" />
+                      <Field label="Inflazione (%)" description="Inflazione prevista" value={inflationRate*100} onChange={(v)=>setInflationRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                    </Grid>
+                  </Card>
+                )}
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
@@ -843,6 +866,9 @@ export default function App(){
                     </Card>
                   </>
                 )}
+                <Card>
+                  <Checkbox label={UI_TEXTS[language].step4.enableEnergy} checked={enableEnergy} onChange={setEnableEnergy} />
+                </Card>
               </div>
               <div className="flex justify-between">
                 <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
@@ -854,7 +880,7 @@ export default function App(){
               </motion.div>
           )}
 
-          {!loading && step===5 && (
+          {!loading && step===5 && enableEnergy && (
             <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
@@ -904,10 +930,10 @@ export default function App(){
                 <div className="text-xs text-slate-500">
                   <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
                 </div>
-                {!hasInvestment && (
+                {!hasInvestment && enableMortgage && (
                   <p className="text-sm text-slate-600">Nessun investimento applicato: vengono mostrati solo i dettagli del mutuo.</p>
                 )}
-                {hasInvestment ? (
+                {(enableMortgage || hasInvestment) && (hasInvestment ? (
                   <>
                     {scenarioStats.map(({ years, scenario, breakEven, payOffTimeYears, label }, idx) => {
                       const finalNom = scenario.fvNominal + (price > 0 ? price : 0);
@@ -980,55 +1006,8 @@ export default function App(){
                       );
                     })}
 
-                    {(enableSolar || enableBoiler) && (
-                      <>
-                        <Card>
-                          <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                          {energyStats.map(({ years, solarBreakEven, solarSaving, boilerBreakEven, boilerSaving }) => (
-                            <div key={years} className="mb-4">
-                              <div className="font-semibold mb-2">Scenario {years} anni</div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {enableSolar && solarCost>0 && (
-                                  <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
-                                    { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Risparmio", value: formatCurrency(solarSaving) },
-                                  ]} />
-                                )}
-                                {enableBoiler && boilerCost>0 && (
-                                  <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
-                                    { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Risparmio", value: formatCurrency(boilerSaving) },
-                                  ]} />
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </Card>
-                        {energyChartData.length > 0 && (
-                          <Card>
-                            <div className="flex items-center gap-2 mb-3">
-                              <TrendingUp className="w-5 h-5" />
-                              <h2 className="text-lg font-medium">Risparmio energia nel tempo</h2>
-                            </div>
-                            <div className="h-72">
-                              <ResponsiveContainer>
-                                <LineChart data={energyChartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                                  <XAxis dataKey="year" />
-                                  <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                                  <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
-                                  <Legend />
-                                  <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                                  {enableSolar && solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
-                                  {enableBoiler && boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
-                                </LineChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </Card>
-                        )}
-                      </>
-                    )}
 
-                    {price > 0 ? (
+                    {enableMortgage && price > 0 ? (
                       <>
                         <Card>
                           <div className="flex items-center gap-2 mb-3">
@@ -1174,52 +1153,52 @@ export default function App(){
                       </Card>
                       );
                     })}
-                    {(enableSolar || enableBoiler) && (
-                      <>
-                        <Card>
-                          <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                          {energyStats.map(({ years, solarBreakEven, solarSaving, boilerBreakEven, boilerSaving }) => (
-                            <div key={years} className="mb-4">
-                              <div className="font-semibold mb-2">Scenario {years} anni</div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {enableSolar && solarCost>0 && (
-                                  <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
-                                    { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Risparmio", value: formatCurrency(solarSaving) },
-                                  ]} />
-                                )}
-                                {enableBoiler && boilerCost>0 && (
-                                  <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
-                                    { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Risparmio", value: formatCurrency(boilerSaving) },
-                                  ]} />
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </Card>
-                        {energyChartData.length > 0 && (
-                          <Card>
-                            <div className="flex items-center gap-2 mb-3">
-                              <TrendingUp className="w-5 h-5" />
-                              <h2 className="text-lg font-medium">Risparmio energia nel tempo</h2>
-                            </div>
-                            <div className="h-72">
-                              <ResponsiveContainer>
-                                <LineChart data={energyChartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                                  <XAxis dataKey="year" />
-                                  <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
-                                  <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
-                                  <Legend />
-                                  <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                                  {enableSolar && solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
-                                  {enableBoiler && boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
-                                </LineChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </Card>
-                        )}
-                      </>
+                  </>
+                ))}
+                {enableEnergy && (enableSolar || enableBoiler) && (
+                  <>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
+                      {energyStats.map(({ years, solarBreakEven, solarSaving, boilerBreakEven, boilerSaving }) => (
+                        <div key={years} className="mb-4">
+                          <div className="font-semibold mb-2">Scenario {years} anni</div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {enableSolar && solarCost>0 && (
+                              <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
+                                { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                { label: "Risparmio", value: formatCurrency(solarSaving) },
+                              ]} />
+                            )}
+                            {enableBoiler && boilerCost>0 && (
+                              <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
+                                { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
+                                { label: "Risparmio", value: formatCurrency(boilerSaving) },
+                              ]} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </Card>
+                    {energyChartData.length > 0 && (
+                      <Card>
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-5 h-5" />
+                          <h2 className="text-lg font-medium">Risparmio energia nel tempo</h2>
+                        </div>
+                        <div className="h-72">
+                          <ResponsiveContainer>
+                            <LineChart data={energyChartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                              <XAxis dataKey="year" />
+                              <YAxis tickFormatter={(v) => v.toLocaleString("it-IT")} />
+                              <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
+                              <Legend />
+                              <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
+                              {enableSolar && solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
+                              {enableBoiler && boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </Card>
                     )}
                   </>
                 )}
@@ -1227,7 +1206,7 @@ export default function App(){
                   <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">{UI_TEXTS[language].navigation.export}</button>
                 </div>
                 <div className="flex justify-between">
-                  <button onClick={()=>setStep(5)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
+                  <button onClick={()=>setStep(enableEnergy ? 5 : 4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                 </div>
             </motion.div>

@@ -65,7 +65,11 @@ export const UI_TEXTS = {
       priceLabel: "Importo considerato (€)",
       priceDesc: "Prezzo dell'immobile da finanziare",
       tanLabel: "TAN (%)",
-      tanDesc: "Tasso annuo nominale del mutuo"
+      tanDesc: "Tasso annuo nominale del mutuo",
+      enableMortgage: "Considera mutuo"
+    },
+    step4: {
+      enableEnergy: "Considera energia"
     },
     navigation: { back: "Indietro", restart: "Ricomincia", next: "Avanti", viewResults: "Vedi risultati", export: "Esporta / Salva PDF" },
     landing: {
@@ -125,7 +129,11 @@ export const UI_TEXTS = {
       priceLabel: "Considered amount (€)",
       priceDesc: "Price of the property to finance",
       tanLabel: "APR (%)",
-      tanDesc: "Annual nominal rate of the loan"
+      tanDesc: "Annual nominal rate of the loan",
+      enableMortgage: "Include mortgage"
+    },
+    step4: {
+      enableEnergy: "Include energy options"
     },
     navigation: { back: "Back", restart: "Restart", next: "Next", viewResults: "See results", export: "Export / Save PDF" },
     landing: {
