@@ -218,7 +218,8 @@ export default function App(){
   const [minimumGainPercentage, setMinimumGainPercentage] = useState(0.1);
 
   // Energia
-  const [enableEnergy, setEnableEnergy] = useState(false);
+  const [enableSolar, setEnableSolar] = useState(false);
+  const [enableBoiler, setEnableBoiler] = useState(false);
   const [solarCost, setSolarCost] = useState(0);
   const [annualElectricCost, setAnnualElectricCost] = useState(0);
   const [solarSavingsPct, setSolarSavingsPct] = useState(0.5);
@@ -294,20 +295,32 @@ export default function App(){
   );
 
   const energyStats = useMemo(() => {
-    if (!enableEnergy) return [];
+    if (!enableSolar && !enableBoiler) return [];
     const solarYearly = annualElectricCost * solarSavingsPct;
     const boilerYearly = annualHeatingCost * boilerSavingsPct;
     return scenarioYears.map((years) => ({
       years,
-      solarBreakEven: solarYearly > 0 ? solarCost / solarYearly : Infinity,
-      solarGain: solarYearly * years - solarCost,
-      boilerBreakEven: boilerYearly > 0 ? boilerCost / boilerYearly : Infinity,
-      boilerGain: boilerYearly * years - boilerCost,
+      solarBreakEven:
+        enableSolar && solarYearly > 0 ? solarCost / solarYearly : Infinity,
+      solarSaving: enableSolar ? solarYearly * years - solarCost : 0,
+      boilerBreakEven:
+        enableBoiler && boilerYearly > 0 ? boilerCost / boilerYearly : Infinity,
+      boilerSaving: enableBoiler ? boilerYearly * years - boilerCost : 0,
     }));
-  }, [enableEnergy, annualElectricCost, solarSavingsPct, solarCost, annualHeatingCost, boilerSavingsPct, boilerCost, scenarioYears]);
+  }, [
+    enableSolar,
+    enableBoiler,
+    annualElectricCost,
+    solarSavingsPct,
+    solarCost,
+    annualHeatingCost,
+    boilerSavingsPct,
+    boilerCost,
+    scenarioYears,
+  ]);
 
   const energyChartData = useMemo(() => {
-    if (!enableEnergy) return [];
+    if (!enableSolar && !enableBoiler) return [];
     const maxY = Math.max(...scenarioYears);
     const rows = [];
     const solarYearly = annualElectricCost * solarSavingsPct;
@@ -315,12 +328,26 @@ export default function App(){
     for (let y = 1; y <= maxY; y++) {
       rows.push({
         year: y,
-        ...(solarCost > 0 ? { "Pannelli solari": solarYearly * y - solarCost } : {}),
-        ...(boilerCost > 0 ? { Caldaia: boilerYearly * y - boilerCost } : {}),
+        ...(enableSolar && solarCost > 0
+          ? { "Pannelli solari": solarYearly * y - solarCost }
+          : {}),
+        ...(enableBoiler && boilerCost > 0
+          ? { Caldaia: boilerYearly * y - boilerCost }
+          : {}),
       });
     }
     return rows;
-  }, [enableEnergy, scenarioYears, annualElectricCost, solarSavingsPct, solarCost, annualHeatingCost, boilerSavingsPct, boilerCost]);
+  }, [
+    enableSolar,
+    enableBoiler,
+    scenarioYears,
+    annualElectricCost,
+    solarSavingsPct,
+    solarCost,
+    annualHeatingCost,
+    boilerSavingsPct,
+    boilerCost,
+  ]);
 
   const colors = ["#2563eb", "#f97316", "#16a34a", "#9333ea", "#14b8a6"];
 
@@ -408,7 +435,8 @@ export default function App(){
       setInvestMonthly(true);
       setSalary(30000);
       setMinimumGainPercentage(0.1);
-      setEnableEnergy(false);
+      setEnableSolar(false);
+      setEnableBoiler(false);
       setSolarCost(0);
       setAnnualElectricCost(0);
       setSolarSavingsPct(0.5);
@@ -418,14 +446,20 @@ export default function App(){
     };
 
     const applyConfig = (cfg) => {
+      setEnableSolar(false);
+      setEnableBoiler(false);
       switch (cfg) {
         case 0:
+          setPrice(0);
+          setDownPaymentRatio(0);
+          setAnnualInterestRate(0);
           setScenarioYears([20, 30]);
           setInitialCapital(0);
           setMonthlyContribution(0);
           setInvestInitial(false);
           setInvestMonthly(false);
-          setEnableEnergy(true);
+          setEnableSolar(true);
+          setEnableBoiler(true);
           setSolarCost(8000);
           setAnnualElectricCost(1200);
           setSolarSavingsPct(0.6);
@@ -543,7 +577,7 @@ export default function App(){
               </div>
               <h2 className="text-xl font-semibold text-center">{UI_TEXTS[language].landing.chooseExample}</h2>
               <div className="space-y-4">
-                <ExampleGroup title={UI_TEXTS[language].landing.mortgage}>
+                <ExampleGroup title={UI_TEXTS[language].landing.energy}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
@@ -565,6 +599,10 @@ export default function App(){
                         }, 2000);
                       }}
                     />
+                  </div>
+                </ExampleGroup>
+                <ExampleGroup title={UI_TEXTS[language].landing.mortgage}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ConfigCard
                       texts={UI_TEXTS[language].configCard}
                       icon={Home}
@@ -822,27 +860,30 @@ export default function App(){
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
               <div className="space-y-3">
                 <Card>
-                  <Checkbox label="Considera pannelli solari e caldaia" checked={enableEnergy} onChange={setEnableEnergy} />
+                  <Checkbox label="Considera pannelli solari" checked={enableSolar} onChange={setEnableSolar} />
                 </Card>
-                {enableEnergy && (
-                  <>
-                    <Card>
-                      <h3 className="text-md font-medium mb-2">Impianto fotovoltaico</h3>
-                      <Grid>
-                        <Field label="Costo pannelli (€)" description="Prezzo comprensivo di installazione" value={solarCost} onChange={setSolarCost} min={0} max={500000} step={100} suffix="€" />
-                        <Field label="Spesa elettrica annua (€)" description="Costo annuo dell'energia" value={annualElectricCost} onChange={setAnnualElectricCost} min={0} max={50000} step={100} suffix="€" />
-                        <Field label="Copertura solare (%)" description="Quota della bolletta coperta dai pannelli" value={solarSavingsPct*100} onChange={(v)=>setSolarSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                      </Grid>
-                    </Card>
-                    <Card>
-                      <h3 className="text-md font-medium mb-2">Caldaia</h3>
-                      <Grid>
-                        <Field label="Costo caldaia (€)" description="Prezzo comprensivo di installazione" value={boilerCost} onChange={setBoilerCost} min={0} max={500000} step={100} suffix="€" />
-                        <Field label="Spesa riscaldamento annua (€)" description="Costo annuo attuale del riscaldamento" value={annualHeatingCost} onChange={setAnnualHeatingCost} min={0} max={50000} step={100} suffix="€" />
-                        <Field label="Riduzione spesa (%)" description="Risparmio atteso con la nuova caldaia" value={boilerSavingsPct*100} onChange={(v)=>setBoilerSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
-                      </Grid>
-                    </Card>
-                  </>
+                {enableSolar && (
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Impianto fotovoltaico</h3>
+                    <Grid>
+                      <Field label="Costo pannelli (€)" description="Prezzo comprensivo di installazione" value={solarCost} onChange={setSolarCost} min={0} max={500000} step={100} suffix="€" />
+                      <Field label="Spesa elettrica annua (€)" description="Costo annuo dell'energia" value={annualElectricCost} onChange={setAnnualElectricCost} min={0} max={50000} step={100} suffix="€" />
+                      <Field label="Risparmio bolletta (%)" description="Quota della spesa elettrica risparmiata" value={solarSavingsPct*100} onChange={(v)=>setSolarSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                    </Grid>
+                  </Card>
+                )}
+                <Card>
+                  <Checkbox label="Considera caldaia" checked={enableBoiler} onChange={setEnableBoiler} />
+                </Card>
+                {enableBoiler && (
+                  <Card>
+                    <h3 className="text-md font-medium mb-2">Caldaia</h3>
+                    <Grid>
+                      <Field label="Costo caldaia (€)" description="Prezzo comprensivo di installazione" value={boilerCost} onChange={setBoilerCost} min={0} max={500000} step={100} suffix="€" />
+                      <Field label="Spesa riscaldamento annua (€)" description="Costo annuo attuale del riscaldamento" value={annualHeatingCost} onChange={setAnnualHeatingCost} min={0} max={50000} step={100} suffix="€" />
+                      <Field label="Risparmio bolletta (%)" description="Quota della spesa riscaldamento risparmiata" value={boilerSavingsPct*100} onChange={(v)=>setBoilerSavingsPct(v/100)} min={0} max={100} step={1} suffix="%" />
+                    </Grid>
+                  </Card>
                 )}
               </div>
               <div className="flex justify-between">
@@ -939,24 +980,24 @@ export default function App(){
                       );
                     })}
 
-                    {enableEnergy && (
+                    {(enableSolar || enableBoiler) && (
                       <>
                         <Card>
                           <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                          {energyStats.map(({ years, solarBreakEven, solarGain, boilerBreakEven, boilerGain }) => (
+                          {energyStats.map(({ years, solarBreakEven, solarSaving, boilerBreakEven, boilerSaving }) => (
                             <div key={years} className="mb-4">
                               <div className="font-semibold mb-2">Scenario {years} anni</div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {solarCost>0 && (
+                                {enableSolar && solarCost>0 && (
                                   <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
                                     { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Guadagno", value: formatCurrency(solarGain) },
+                                    { label: "Risparmio", value: formatCurrency(solarSaving) },
                                   ]} />
                                 )}
-                                {boilerCost>0 && (
+                                {enableBoiler && boilerCost>0 && (
                                   <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
                                     { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                    { label: "Risparmio", value: formatCurrency(boilerSaving) },
                                   ]} />
                                 )}
                               </div>
@@ -967,7 +1008,7 @@ export default function App(){
                           <Card>
                             <div className="flex items-center gap-2 mb-3">
                               <TrendingUp className="w-5 h-5" />
-                              <h2 className="text-lg font-medium">Guadagno energia nel tempo</h2>
+                              <h2 className="text-lg font-medium">Risparmio energia nel tempo</h2>
                             </div>
                             <div className="h-72">
                               <ResponsiveContainer>
@@ -977,8 +1018,8 @@ export default function App(){
                                   <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
                                   <Legend />
                                   <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                                  {solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
-                                  {boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
+                                  {enableSolar && solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
+                                  {enableBoiler && boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
                                 </LineChart>
                               </ResponsiveContainer>
                             </div>
@@ -1133,24 +1174,24 @@ export default function App(){
                       </Card>
                       );
                     })}
-                    {enableEnergy && (
+                    {(enableSolar || enableBoiler) && (
                       <>
                         <Card>
                           <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
-                          {energyStats.map(({ years, solarBreakEven, solarGain, boilerBreakEven, boilerGain }) => (
+                          {energyStats.map(({ years, solarBreakEven, solarSaving, boilerBreakEven, boilerSaving }) => (
                             <div key={years} className="mb-4">
                               <div className="font-semibold mb-2">Scenario {years} anni</div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {solarCost>0 && (
+                                {enableSolar && solarCost>0 && (
                                   <DataCard icon={Sun} iconClass="text-yellow-500" label="Pannelli solari" items={[
                                     { label: "Break-even", value: isFinite(solarBreakEven) ? `${solarBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Guadagno", value: formatCurrency(solarGain) },
+                                    { label: "Risparmio", value: formatCurrency(solarSaving) },
                                   ]} />
                                 )}
-                                {boilerCost>0 && (
+                                {enableBoiler && boilerCost>0 && (
                                   <DataCard icon={Flame} iconClass="text-orange-500" label="Caldaia" items={[
                                     { label: "Break-even", value: isFinite(boilerBreakEven) ? `${boilerBreakEven.toFixed(1)} anni` : `> ${years} anni` },
-                                    { label: "Guadagno", value: formatCurrency(boilerGain) },
+                                    { label: "Risparmio", value: formatCurrency(boilerSaving) },
                                   ]} />
                                 )}
                               </div>
@@ -1161,7 +1202,7 @@ export default function App(){
                           <Card>
                             <div className="flex items-center gap-2 mb-3">
                               <TrendingUp className="w-5 h-5" />
-                              <h2 className="text-lg font-medium">Guadagno energia nel tempo</h2>
+                              <h2 className="text-lg font-medium">Risparmio energia nel tempo</h2>
                             </div>
                             <div className="h-72">
                               <ResponsiveContainer>
@@ -1171,8 +1212,8 @@ export default function App(){
                                   <Tooltip formatter={(v) => formatCurrency(v)} labelFormatter={(l) => `Anno ${l}`} />
                                   <Legend />
                                   <ReferenceLine y={0} stroke="#222" strokeDasharray="4 4" />
-                                  {solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
-                                  {boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
+                                  {enableSolar && solarCost>0 && <Line type="monotone" dataKey="Pannelli solari" stroke="#eab308" dot={false} strokeWidth={2} />}
+                                  {enableBoiler && boilerCost>0 && <Line type="monotone" dataKey="Caldaia" stroke="#f97316" dot={false} strokeWidth={2} />}
                                 </LineChart>
                               </ResponsiveContainer>
                             </div>
