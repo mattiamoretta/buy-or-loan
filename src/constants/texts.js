@@ -1,13 +1,12 @@
 export const STEP_LABELS = {
-  it: ["Scenari", "Mutuo", "Patrimonio", "Investimenti", "Energia", "Risultati"],
-  en: ["Scenarios", "Mortgage", "Assets", "Investments", "Energy", "Results"],
+  it: ["Scenari", "Mutuo", "Investimenti", "Energia", "Risultati"],
+  en: ["Scenarios", "Mortgage", "Investments", "Energy", "Results"],
 };
 
 export const STEP_DESCRIPTIONS = {
   it: [
     "Immagina i possibili scenari e scegli la durata perfetta per il tuo viaggio finanziario.",
     "Configura il tuo mutuo: i dettagli che ti porteranno alla casa dei tuoi sogni.",
-    "Fotografa il tuo patrimonio iniziale, il punto di partenza per costruire il futuro.",
     "Definisci la strategia d'investimento per far crescere i tuoi risparmi.",
     "Valuta interventi energetici come pannelli solari e caldaia.",
     "Scopri i risultati: l'epilogo del tuo percorso tra mutuo e investimenti.",
@@ -15,7 +14,6 @@ export const STEP_DESCRIPTIONS = {
   en: [
     "Imagine possible scenarios and choose the perfect duration for your financial journey.",
     "Configure your mortgage: the details that lead you to your dream home.",
-    "Capture your starting assets, the launch pad for building your future.",
     "Define your investment strategy to grow your savings.",
     "Evaluate energy improvements like solar panels and boiler.",
     "Explore the results: the conclusion of your path between loan and investments.",
@@ -67,9 +65,6 @@ export const UI_TEXTS = {
       tanLabel: "TAN (%)",
       tanDesc: "Tasso annuo nominale del mutuo",
       enableMortgage: "Considera mutuo"
-    },
-    step4: {
-      enableEnergy: "Considera energia"
     },
     navigation: { back: "Indietro", restart: "Ricomincia", next: "Avanti", viewResults: "Vedi risultati", export: "Esporta / Salva PDF" },
     landing: {
@@ -131,9 +126,6 @@ export const UI_TEXTS = {
       tanLabel: "APR (%)",
       tanDesc: "Annual nominal rate of the loan",
       enableMortgage: "Include mortgage"
-    },
-    step4: {
-      enableEnergy: "Include energy options"
     },
     navigation: { back: "Back", restart: "Restart", next: "Next", viewResults: "See results", export: "Export / Save PDF" },
     landing: {
