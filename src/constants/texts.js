@@ -72,6 +72,7 @@ export const UI_TEXTS = {
       mortgage: "Mutuo",
       investment: "Investimento",
       mortgageVsCash: "Mutuo vs pagamento",
+      energy: "Energia",
       tagline: "Simula e confronta mutuo e investimento per trovare la strategia migliore.",
       start: "Inizia",
       chooseExample: "Oppure scegli un esempio",
@@ -131,6 +132,7 @@ export const UI_TEXTS = {
       mortgage: "Mortgage",
       investment: "Investment",
       mortgageVsCash: "Mortgage vs cash",
+      energy: "Energy",
       tagline: "Simulate and compare mortgage and investment to find the best strategy.",
       start: "Start",
       chooseExample: "Or pick an example",
@@ -145,9 +147,9 @@ export const UI_TEXTS = {
 export const CONFIG_TEXTS = {
   it: [
     {
-      title: "Nuovo! Mutuo con energia",
-      description: "Simula un mutuo considerando pannelli solari e caldaia.",
-      details: ["Mutuo €150k", "Anticipo 15%", "Opzioni energia"],
+      title: "Nuovo! Energia",
+      description: "Simula pannelli solari e caldaia senza mutuo.",
+      details: ["Opzioni energia"],
     },
     {
       title: "Stai valutando un mutuo?",
@@ -177,9 +179,9 @@ export const CONFIG_TEXTS = {
   ],
   en: [
     {
-      title: "New! Mortgage with energy",
-      description: "Simulate a mortgage including solar panels and boiler.",
-      details: ["€150k mortgage", "15% down payment", "Energy options"],
+      title: "New! Energy",
+      description: "Simulate solar panels and boiler without a mortgage.",
+      details: ["Energy options"],
     },
     {
       title: "Are you considering a mortgage?",
