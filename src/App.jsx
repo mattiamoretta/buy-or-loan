@@ -187,7 +187,6 @@ export default function App(){
 
   // Flags
   const [enableMortgage, setEnableMortgage] = useState(true);
-  const [enableEnergy, setEnableEnergy] = useState(false);
 
   const backgrounds = [
     'from-orange-50 via-amber-50 to-yellow-50',
@@ -196,7 +195,6 @@ export default function App(){
     'from-orange-300 via-amber-300 to-yellow-300',
     'from-orange-400 via-amber-400 to-yellow-400',
     'from-orange-500 via-amber-500 to-yellow-500',
-    'from-orange-600 via-amber-600 to-yellow-600',
   ];
 
   // Base
@@ -217,7 +215,7 @@ export default function App(){
   const [investInitial, setInvestInitial] = useState(true);
   const [investMonthly, setInvestMonthly] = useState(true);
 
-  // Patrimonio
+  // Obiettivi
   const [salary, setSalary] = useState(30000);
   const [minimumGainPercentage, setMinimumGainPercentage] = useState(0.1);
 
@@ -530,7 +528,7 @@ export default function App(){
 
     const handleInvestNext = () => {
       const proceed = () => {
-        setStep(enableEnergy ? 5 : 6);
+        setStep(4);
       };
       const principal = price * (1 - downPaymentRatio);
       if(enableMortgage && principal <= 0){
@@ -556,7 +554,7 @@ export default function App(){
 
     const handleEnergyNext = () => {
       setLoading(true);
-      setTimeout(()=>{setLoading(false); setStep(6);},2000);
+      setTimeout(()=>{setLoading(false); setStep(5);},2000);
     };
 
   return (
@@ -610,7 +608,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -629,7 +627,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -648,7 +646,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -671,7 +669,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -694,7 +692,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -718,7 +716,7 @@ export default function App(){
                         setLoading(true);
                         setTimeout(() => {
                           setLoading(false);
-                          setStep(6);
+                          setStep(5);
                         }, 2000);
                       }}
                     />
@@ -810,35 +808,9 @@ export default function App(){
           )}
 
           {!loading && step===3 && (
-            <motion.div key="s3" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
+            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
               <h2 className="text-lg font-medium">{`Step 3 – ${STEP_LABELS[language][2]}`}</h2>
               <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][2]}</p>
-              <div className="space-y-3">
-                {(enableMortgage || investInitial || investMonthly) && (
-                  <Card>
-                    <h3 className="text-md font-medium mb-2">Risorse</h3>
-                    <Grid>
-                      <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
-                      <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={monthlyContribution} onChange={setMonthlyContribution} min={0} max={50000} step={50} suffix="€" />
-                      <Field label="Inflazione (%)" description="Inflazione prevista" value={inflationRate*100} onChange={(v)=>setInflationRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
-                    </Grid>
-                  </Card>
-                )}
-              </div>
-              <div className="flex justify-between">
-                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
-                <div className="flex gap-2">
-                  <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
-                  <button onClick={()=>setStep(4)} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
-                </div>
-              </div>
-              </motion.div>
-          )}
-
-          {!loading && step===4 && (
-            <motion.div key="s4" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">{`Step 4 – ${STEP_LABELS[language][3]}`}</h2>
-              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][3]}</p>
               <div className="space-y-3">
                 <Card>
                   <h3 className="text-md font-medium mb-2">Piano di investimento</h3>
@@ -849,6 +821,14 @@ export default function App(){
                 </Card>
                 {(investInitial || investMonthly) && (
                   <>
+                    <Card>
+                      <h3 className="text-md font-medium mb-2">Risorse</h3>
+                      <Grid>
+                        <Field label="Capitale iniziale (€)" description="Somma disponibile subito" value={initialCapital} onChange={setInitialCapital} min={0} max={5000000} step={1000} suffix="€" />
+                        <Field label="Disponibilità mensile (€)" description="Può derivare da risparmi sullo stipendio oppure da guadagni legati al mutuo (ad esempio un immobile in affitto)" value={monthlyContribution} onChange={setMonthlyContribution} min={0} max={50000} step={50} suffix="€" />
+                        <Field label="Inflazione (%)" description="Inflazione prevista" value={inflationRate*100} onChange={(v)=>setInflationRate(v/100)} min={0} max={10} step={0.1} suffix="%" />
+                      </Grid>
+                    </Card>
                     <Card>
                       <h3 className="text-md font-medium mb-2">Rendimento</h3>
                       <Grid>
@@ -866,12 +846,9 @@ export default function App(){
                     </Card>
                   </>
                 )}
-                <Card>
-                  <Checkbox label={UI_TEXTS[language].step4.enableEnergy} checked={enableEnergy} onChange={setEnableEnergy} />
-                </Card>
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
+                <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                   <button onClick={handleInvestNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.next} <ArrowRight className="w-4 h-4"/></button>
@@ -879,11 +856,10 @@ export default function App(){
               </div>
               </motion.div>
           )}
-
-          {!loading && step===5 && enableEnergy && (
+          {!loading && step===4 && (
             <motion.div key="s5" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="bg-white p-6 rounded-2xl shadow space-y-6">
-              <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
-              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
+              <h2 className="text-lg font-medium">{`Step 4 – ${STEP_LABELS[language][3]}`}</h2>
+              <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][3]}</p>
               <div className="space-y-3">
                 <Card>
                   <Checkbox label="Considera pannelli solari" checked={enableSolar} onChange={setEnableSolar} />
@@ -913,7 +889,7 @@ export default function App(){
                 )}
               </div>
               <div className="flex justify-between">
-                <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
+                <button onClick={()=>setStep(3)} className="px-4 py-2 rounded-xl border border-orange-600 text-orange-600 bg-white">{UI_TEXTS[language].navigation.back}</button>
                 <div className="flex gap-2">
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                   <button onClick={handleEnergyNext} className="px-4 py-2 bg-white text-orange-600 border border-orange-600 rounded-xl inline-flex items-center gap-2">{UI_TEXTS[language].navigation.viewResults} <ArrowRight className="w-4 h-4"/></button>
@@ -922,10 +898,10 @@ export default function App(){
             </motion.div>
           )}
 
-          {!loading && step===6 && (
+          {!loading && step===5 && (
               <motion.div key="s6" initial={{opacity:0,x:50}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-50}} transition={{duration:0.4}} className="space-y-6">
-                <h2 className="text-lg font-medium">{`Step 6 – ${STEP_LABELS[language][5]}`}</h2>
-                <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][5]}</p>
+                <h2 className="text-lg font-medium">{`Step 5 – ${STEP_LABELS[language][4]}`}</h2>
+                <p className="text-sm text-slate-600">{STEP_DESCRIPTIONS[language][4]}</p>
                 <Recap price={price} downPaymentRatio={downPaymentRatio} annualInterestRate={annualInterestRate} scenarioYears={scenarioYears} initialCapital={initialCapital} monthlyContribution={monthlyContribution} inflationRate={inflationRate} grossReturnRate={grossReturnRate} taxRate={taxRate} investInitial={investInitial} investMonthly={investMonthly} minimumGainPercentage={minimumGainPercentage} salary={salary} texts={UI_TEXTS[language].recap} />
                 <div className="text-xs text-slate-500">
                   <span className="font-semibold">Legenda:</span> Nominale = senza inflazione; Reale = valore attualizzato considerando l'inflazione.
@@ -1155,7 +1131,7 @@ export default function App(){
                     })}
                   </>
                 ))}
-                {enableEnergy && (enableSolar || enableBoiler) && (
+                {(enableSolar || enableBoiler) && (
                   <>
                     <Card>
                       <h3 className="text-md font-medium mb-2">Pannelli solari e caldaia</h3>
@@ -1206,7 +1182,7 @@ export default function App(){
                   <button onClick={()=>window.print()} className="px-4 py-2 rounded-xl border bg-white hover:bg-slate-50">{UI_TEXTS[language].navigation.export}</button>
                 </div>
                 <div className="flex justify-between">
-                  <button onClick={()=>setStep(enableEnergy ? 5 : 4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
+                  <button onClick={()=>setStep(4)} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.back}</button>
                   <button onClick={()=>{resetAll(); setStep(0);}} className="px-4 py-2 rounded-xl border bg-white">{UI_TEXTS[language].navigation.restart}</button>
                 </div>
             </motion.div>
