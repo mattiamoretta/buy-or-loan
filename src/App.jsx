@@ -78,6 +78,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
       <div className="flex gap-2 justify-center mt-2">
         {onSteps && (
           <button
+            type="button"
             onClick={onSteps}
             className="px-3 py-1 bg-white text-orange-600 border border-orange-600 rounded-xl text-sm"
           >
@@ -86,6 +87,7 @@ function ConfigCard({ title, description, details = [], icon: Icon, onSteps, onR
         )}
         {onResults && (
           <button
+            type="button"
             onClick={onResults}
             className="px-3 py-1 bg-orange-600 text-white rounded-xl text-sm"
           >
